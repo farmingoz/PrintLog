@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PrintLog.Web.Jobs {
+namespace PrintLog.Hangfire.Jobs {
     public class AutoDelete {
         private readonly IServiceProvider serviceProvider;
 

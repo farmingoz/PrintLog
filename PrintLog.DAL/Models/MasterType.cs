@@ -16,6 +16,7 @@ namespace PrintLog.DAL.Models
         public int? ParentTypeId { get; set; }
         public string TypeName { get; set; }
         public int? RefNo { get; set; }
+        public int? CycleTime { get; set; }
 
         public virtual ICollection<ImportFile> ImportFiles { get; set; }
         public virtual ICollection<MachineLog> MachineLogs { get; set; }

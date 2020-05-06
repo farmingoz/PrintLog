@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintLog.DAL", "PrintLog.DAL\PrintLog.DAL.csproj", "{27F5E4A6-2F21-4CEF-B15D-F13744BAC63B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrintLog.DAL", "PrintLog.DAL\PrintLog.DAL.csproj", "{27F5E4A6-2F21-4CEF-B15D-F13744BAC63B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintLog.Web", "PrintLog.Web\PrintLog.Web.csproj", "{47F96074-13FE-48A0-9F80-60E483372906}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrintLog.Hangfire", "PrintLog.Hangfire\PrintLog.Hangfire.csproj", "{47F96074-13FE-48A0-9F80-60E483372906}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

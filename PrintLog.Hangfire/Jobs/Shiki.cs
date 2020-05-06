@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PrintLog.DAL.Data;
 using PrintLog.DAL.Models;
-using PrintLog.Web.Models;
+using PrintLog.Hangfire.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TKSLibrary;
 
-namespace PrintLog.Web.Jobs {
+namespace PrintLog.Hangfire.Jobs {
     public class Shiki {
         private readonly IServiceProvider serviceProvider;
 

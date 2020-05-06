@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using PrintLog.DAL.Data;
 using PrintLog.DAL.Models;
-using PrintLog.Web.Models;
+using PrintLog.Hangfire.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TKSLibrary;
 
-namespace PrintLog.Web.Jobs {
+namespace PrintLog.Hangfire.Jobs {
     public class Prisma {
         private readonly IServiceProvider serviceProvider;
 
@@ -64,6 +64,55 @@ namespace PrintLog.Web.Jobs {
                                     string[] value = line.Split(';');
                                     newImport.CountLine++;
                                     dbContext.SaveChanges();
+
+                                    List<PrinterLog> LstPrinterLog = new List<PrinterLog>();
+                                    List<PrinterLogDetail> LstPrinterLogDetail = new List<PrinterLogDetail>();
+
+                                    // TODO - Convert data into DB
+
+
+
+                                    if (value[0] == "1010") {
+                                        string jobId = value[1];
+                                        PrinterLog updatePrint = dbContext.PrinterLogs.SingleOrDefault(s => s.PrinterId == printerId && s.JobId == jobId);
+                                        if (updatePrint == null) {
+                                            PrinterLog newPrinterLog = new PrinterLog() {
+                                                PrinterId = printerId,
+                                                JobId = jobId,
+                                                ImportId = newImport.ImportId,
+                                                Client = value[2],
+                                                Sender = value[3],
+                                                TotalFile = value[4].ToInt(),
+                                                Printer = value[5],
+                                                Jobqueue = value[6].ToInt(),
+                                                Resolution = value[7].ToInt(),
+                                                Proofprint = value[8] == "yes",
+                                                Storeprint = value[9] == "yes",
+                                                CustAcc = value[10],
+                                                DateSubmission = DateTime.ParseExact(value[11] + " " + value[12], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
+                                                ReferenceId = value[13],
+                                                Form = value[14],
+                                                TicketName = value[15],
+                                                JobName = value[16],
+                                                OrderId = value[17],
+                                                Range = value[18],
+                                                ColorIds = value[19],
+                                                TrackingEnabled = value[20] == "1",
+                                                RawData = line,
+                                                DateCreated = dateTimeNow,
+                                                LastRecordType = 1010
+                                            };
+                                            dbContext.PrinterLogs.Add(newPrinterLog);
+                                            newImport.CountJob++;
+                                            dbContext.SaveChanges();
+                                        }
+                                    } else if (value[0] == "1011") {
+                                        string[] jobIdSplited = value[1].Split('.');
+                                        string jobId = jobIdSplited[0];
+                                        int fileId = jobIdSplited[1].ToInt();
+
+                                    }
+
 
                                     if (value[0] == "1010" && value[18] == string.Empty) {
                                         string jobId = value[1];

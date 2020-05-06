@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PrintLog.Web.Jobs {
+namespace PrintLog.Hangfire.Jobs {
     public class MasterSchedule {
         private readonly IServiceProvider serviceProvider;
 

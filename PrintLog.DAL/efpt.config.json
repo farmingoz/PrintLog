@@ -30,7 +30,15 @@
       },
       {
          "HasPrimaryKey": true,
-         "Name": "[dbo].[sysdiagrams]"
+         "Name": "[dbo].[PrinterLogDetails]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[PrinterLogs]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[RecordTypes]"
       },
       {
          "HasPrimaryKey": true,
