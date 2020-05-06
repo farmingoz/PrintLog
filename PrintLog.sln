@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30002.166
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintLog.DAL", "PrintLog.DAL\PrintLog.DAL.csproj", "{27F5E4A6-2F21-4CEF-B15D-F13744BAC63B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintLog.Web", "PrintLog.Web\PrintLog.Web.csproj", "{47F96074-13FE-48A0-9F80-60E483372906}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{27F5E4A6-2F21-4CEF-B15D-F13744BAC63B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27F5E4A6-2F21-4CEF-B15D-F13744BAC63B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27F5E4A6-2F21-4CEF-B15D-F13744BAC63B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27F5E4A6-2F21-4CEF-B15D-F13744BAC63B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47F96074-13FE-48A0-9F80-60E483372906}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47F96074-13FE-48A0-9F80-60E483372906}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47F96074-13FE-48A0-9F80-60E483372906}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47F96074-13FE-48A0-9F80-60E483372906}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A267FD6E-4757-4132-B560-9D7E9F7B1934}
+	EndGlobalSection
+EndGlobal

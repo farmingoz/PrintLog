@@ -1,0 +1,51 @@
+﻿{
+   "ContextClassName": "PrintlogDbContext",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "DoNotCombineNamespace": false,
+   "IdReplace": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": "Data",
+   "OutputPath": "Models",
+   "ProjectRootNamespace": "PrintLog.DAL",
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[ImportFiles]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[MachineLogDetails]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[MachineLogs]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[MasterTypes]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[sysdiagrams]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[vwImportFiles]"
+      },
+      {
+         "HasPrimaryKey": true,
+         "Name": "[dbo].[vwMachineLogs]"
+      }
+   ],
+   "UseDatabaseNames": false,
+   "UseDbContextSplitting": false,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseInflector": true,
+   "UseLegacyPluralizer": false,
+   "UseSpatial": false
+}
