@@ -52,6 +52,8 @@ namespace PrintLog.DAL.Models
         public string RawData { get; set; }
         public DateTime DateCreated { get; set; }
         public int ImportId { get; set; }
-        public int? LastRecordType { get; set; }
+        public int? ImportIdModified { get; set; }
+        public DateTime? DateModified { get; set; }
+        public int LastRecordType { get; set; }
     }
 }

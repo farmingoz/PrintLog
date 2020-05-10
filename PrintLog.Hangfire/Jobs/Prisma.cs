@@ -37,7 +37,7 @@ namespace PrintLog.Hangfire.Jobs {
                             Directory.CreateDirectory(pathOutputFailed);
                         }
 
-                        foreach (string file in Directory.EnumerateFiles(pathInput)) {
+                        foreach (string file in Directory.EnumerateFiles(pathInput, "*.acc")) {
                             DateTime dateTimeNow = DateTime.Now;
                             ImportFile newImport = new ImportFile() {
                                 PrinterId = printerId,
@@ -57,6 +57,129 @@ namespace PrintLog.Hangfire.Jobs {
                                 newImport.ImportId = importFile.ImportId;
                             }
 
+                            List<PrinterLog> LstPrinterLog = new List<PrinterLog>();
+                            List<PrinterLogDetail> LstPrinterLogDetail = new List<PrinterLogDetail>();
+
+                            StreamReader reader = new StreamReader(file);
+                            while (!reader.EndOfStream) {
+                                string line = reader.ReadLine();
+                                newImport.CountLine++;
+
+                                string[] value = line.Split(';');
+                                string[] jobIdSplited = value[1].Split('.');
+                                string jobId = jobIdSplited[0];
+                                int recordType = value[0].ToInt();
+
+                                if (recordType == 1010) {
+                                    PrinterLog updatePrinterLog = LstPrinterLog.FirstOrDefault(f => f.JobId == jobId);
+                                    if (updatePrinterLog == null) {
+                                        LstPrinterLog.Add(new PrinterLog() {
+                                            PrinterId = printerId,
+                                            JobId = jobId,
+                                            Client = value[2],
+                                            Sender = value[3],
+                                            TotalFile = value[4].ToInt(),
+                                            Printer = value[5],
+                                            Jobqueue = value[6].ToInt(),
+                                            Resolution = value[7].ToInt(),
+                                            Proofprint = value[8] == "yes",
+                                            Storeprint = value[9] == "yes",
+                                            CustAcc = value[10],
+                                            DateSubmission = DateTime.ParseExact(value[11] + " " + value[12], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
+                                            ReferenceId = value[13],
+                                            Form = value[14],
+                                            TicketName = value[15],
+                                            JobName = value[16],
+                                            OrderId = value[17],
+                                            Range = value[18],
+                                            ColorIds = value[19],
+                                            TrackingEnabled = value[20] == "1",
+                                            RawData = line,
+                                            DateCreated = dateTimeNow,
+                                            ImportId = newImport.ImportId,
+                                            LastRecordType = recordType,
+                                        });
+                                        newImport.CountJob++;
+                                    } else {
+                                        updatePrinterLog.Client = value[2];
+                                        updatePrinterLog.Sender = value[3];
+                                        updatePrinterLog.TotalFile = value[4].ToInt();
+                                        updatePrinterLog.Printer = value[5];
+                                        updatePrinterLog.Jobqueue = value[6].ToInt();
+                                        updatePrinterLog.Resolution = value[7].ToInt();
+                                        updatePrinterLog.Proofprint = value[8] == "yes";
+                                        updatePrinterLog.Storeprint = value[9] == "yes";
+                                        updatePrinterLog.CustAcc = value[10];
+                                        updatePrinterLog.DateSubmission = DateTime.ParseExact(value[11] + " " + value[12], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
+                                        updatePrinterLog.ReferenceId = value[13];
+                                        updatePrinterLog.Form = value[14];
+                                        updatePrinterLog.TicketName = value[15];
+                                        updatePrinterLog.JobName = value[16];
+                                        updatePrinterLog.OrderId = value[17];
+                                        updatePrinterLog.Range = value[18];
+                                        updatePrinterLog.ColorIds = value[19];
+                                        updatePrinterLog.TrackingEnabled = value[20] == "1";
+                                        updatePrinterLog.RawData += line;
+                                        updatePrinterLog.ImportIdModified = newImport.ImportId;
+                                        updatePrinterLog.DateModified = dateTimeNow;
+                                        updatePrinterLog.LastRecordType = recordType;
+                                    }
+                                } else if (recordType == 1011) {
+                                    PrinterLog updatePrinterLog = LstPrinterLog.FirstOrDefault(f => f.JobId == jobId);
+                                    if (updatePrinterLog == null) {
+                                        LstPrinterLog.Add(new PrinterLog() {
+                                            PrinterId = printerId,
+                                            JobId = jobId,
+                                            RawData = line,
+                                            DateCreated = dateTimeNow,
+                                            ImportId = newImport.ImportId,
+                                            LastRecordType = recordType,
+                                        });
+                                        newImport.CountJob++;
+                                    }
+
+                                    PrinterLogDetail updatePrinterLogDetail = LstPrinterLogDetail.FirstOrDefault(f => f.JobId == jobId);
+                                    if (updatePrinterLogDetail == null) {
+                                        LstPrinterLogDetail.Add(new PrinterLogDetail() {
+                                            PrinterId = printerId,
+                                            JobId = jobId,
+                                            JobType = value[2],
+                                            FullPath = value[3],
+                                            JobName = Path.GetFileName(value[3]),
+                                            Filesize = value[4].ToInt(),
+                                            Copies = value[5].ToInt(),
+                                            Formdef = value[6],
+                                            Pagedef = value[7],
+                                            RawData = line,
+                                            DateCreated = dateTimeNow,
+                                            ImportId = newImport.ImportId,
+                                            LastRecordType = recordType,
+                                        });
+                                        newImport.CountJob++;
+                                    } else {
+                                        updatePrinterLogDetail.JobType = value[2];
+                                        updatePrinterLogDetail.FullPath = value[3];
+                                        updatePrinterLogDetail.JobName = Path.GetFileName(value[3]);
+                                        updatePrinterLogDetail.Filesize = value[4].ToInt();
+                                        updatePrinterLogDetail.Copies = value[5].ToInt();
+                                        updatePrinterLogDetail.Formdef = value[6];
+                                        updatePrinterLogDetail.Pagedef = value[7];
+                                        updatePrinterLogDetail.RawData += line;
+                                        updatePrinterLogDetail.ImportIdModified = newImport.ImportId;
+                                        updatePrinterLogDetail.DateModified = dateTimeNow;
+                                        updatePrinterLogDetail.LastRecordType = recordType;
+                                    }
+                                }
+                            }
+
+
+
+
+
+                            dbContext.SaveChanges();
+                            
+                            ///
+
                             if (Path.GetExtension(file).ToLower() == ".acc") {
                                 StreamReader reader = new StreamReader(file);
                                 while (!reader.EndOfStream) {
@@ -65,54 +188,7 @@ namespace PrintLog.Hangfire.Jobs {
                                     newImport.CountLine++;
                                     dbContext.SaveChanges();
 
-                                    List<PrinterLog> LstPrinterLog = new List<PrinterLog>();
-                                    List<PrinterLogDetail> LstPrinterLogDetail = new List<PrinterLogDetail>();
-
                                     // TODO - Convert data into DB
-
-
-
-                                    if (value[0] == "1010") {
-                                        string jobId = value[1];
-                                        PrinterLog updatePrint = dbContext.PrinterLogs.SingleOrDefault(s => s.PrinterId == printerId && s.JobId == jobId);
-                                        if (updatePrint == null) {
-                                            PrinterLog newPrinterLog = new PrinterLog() {
-                                                PrinterId = printerId,
-                                                JobId = jobId,
-                                                ImportId = newImport.ImportId,
-                                                Client = value[2],
-                                                Sender = value[3],
-                                                TotalFile = value[4].ToInt(),
-                                                Printer = value[5],
-                                                Jobqueue = value[6].ToInt(),
-                                                Resolution = value[7].ToInt(),
-                                                Proofprint = value[8] == "yes",
-                                                Storeprint = value[9] == "yes",
-                                                CustAcc = value[10],
-                                                DateSubmission = DateTime.ParseExact(value[11] + " " + value[12], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
-                                                ReferenceId = value[13],
-                                                Form = value[14],
-                                                TicketName = value[15],
-                                                JobName = value[16],
-                                                OrderId = value[17],
-                                                Range = value[18],
-                                                ColorIds = value[19],
-                                                TrackingEnabled = value[20] == "1",
-                                                RawData = line,
-                                                DateCreated = dateTimeNow,
-                                                LastRecordType = 1010
-                                            };
-                                            dbContext.PrinterLogs.Add(newPrinterLog);
-                                            newImport.CountJob++;
-                                            dbContext.SaveChanges();
-                                        }
-                                    } else if (value[0] == "1011") {
-                                        string[] jobIdSplited = value[1].Split('.');
-                                        string jobId = jobIdSplited[0];
-                                        int fileId = jobIdSplited[1].ToInt();
-
-                                    }
-
 
                                     if (value[0] == "1010" && value[18] == string.Empty) {
                                         string jobId = value[1];

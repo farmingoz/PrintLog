@@ -231,6 +231,10 @@ namespace PrintLog.DAL.Data
                     .HasColumnType("datetime")
                     .HasComment("[1012.Date + 1012.Time] วันเวลาที่นำออกจากระบบ");
 
+                entity.Property(e => e.DateModified)
+                    .HasColumnType("datetime")
+                    .HasComment("วันเวลาที่แก้ไขข้อมูล");
+
                 entity.Property(e => e.DateStart)
                     .HasColumnType("datetime")
                     .HasComment("[1040.Startdate + 1040.Starttime] วันเวลาที่เริ่มพิมพ์");
@@ -254,6 +258,8 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.FrontPages).HasComment("[1040.FPages] จำนวนหน้าที่พิมพ์ด้านหน้า");
 
                 entity.Property(e => e.ImportId).HasComment("เลขที่การนำเข้าข้อมูล");
+
+                entity.Property(e => e.ImportIdModified).HasComment("เลขที่การแก้ไขข้อมูล");
 
                 entity.Property(e => e.InformationPages).HasComment("[1040.IPages] จำนวนหน้าของใบปะหน้า");
 
@@ -456,6 +462,36 @@ namespace PrintLog.DAL.Data
                     .HasComment("[1011.Filetype | 1030.Filetype] ประเภทไฟล์พิมพ์");
 
                 entity.Property(e => e.Jobqueue).HasComment("[1031.Jobqueue]");
+
+                entity.Property(e => e.LastRecordType).HasComment(@"record type
+1000 : Input-Filter,
+1010 : Print Job Manager Job-Id,
+1011 : Print Job Manager Sud-Id,
+1012 : ODS,
+1020 : UI-Manager,
+1030 : Spool recheck information,
+1031 : Spool after printed,
+1032 : Spool after printed พร้อม 1031,
+1040 : Information actually printed,
+1041 : Information input and output bins,
+1042 : Detailed information input bins,
+1043 : Detailed information output bins,
+1052 : PJL/PCL Driver,
+1110 : Host Download,
+1120 : LP,
+1130 : HotDir,
+1200 : LCDS report information,
+1201 : Additional report information,
+1202 : Additional job information,
+1210 : LCDS-Driver,
+1600 : FTP-Driver - after job finished,
+1601 : 
+1602 : 
+1603 : 
+1620 : Postscript Driver - Job Id,
+1621 : Postscript Driver - Sub Id,
+2010 : job ticket information,
+99xx : User-specific Extensions");
 
                 entity.Property(e => e.LengthPage).HasComment("[1042.Slen] Length of page (1/6 inch)");
 
