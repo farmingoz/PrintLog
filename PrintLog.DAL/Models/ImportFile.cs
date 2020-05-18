@@ -6,25 +6,16 @@ namespace PrintLog.DAL.Models
 {
     public partial class ImportFile
     {
-        public ImportFile()
-        {
-            MachineLogDetailImportIdModifiedNavigations = new HashSet<MachineLogDetail>();
-            MachineLogDetailImports = new HashSet<MachineLogDetail>();
-            MachineLogs = new HashSet<MachineLog>();
-        }
-
         public int ImportId { get; set; }
         public string FileName { get; set; }
         public int CountLine { get; set; }
         public int CountJob { get; set; }
+        public int CountJobDetail { get; set; }
         public bool IsSuccess { get; set; }
         public int PrinterId { get; set; }
         public DateTime DateCreated { get; set; }
         public string ErrorMessage { get; set; }
 
         public virtual MasterType Printer { get; set; }
-        public virtual ICollection<MachineLogDetail> MachineLogDetailImportIdModifiedNavigations { get; set; }
-        public virtual ICollection<MachineLogDetail> MachineLogDetailImports { get; set; }
-        public virtual ICollection<MachineLog> MachineLogs { get; set; }
     }
 }

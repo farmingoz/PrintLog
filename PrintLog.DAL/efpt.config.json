@@ -18,14 +18,6 @@
       },
       {
          "HasPrimaryKey": true,
-         "Name": "[dbo].[MachineLogDetails]"
-      },
-      {
-         "HasPrimaryKey": true,
-         "Name": "[dbo].[MachineLogs]"
-      },
-      {
-         "HasPrimaryKey": true,
          "Name": "[dbo].[MasterTypes]"
       },
       {
@@ -39,14 +31,6 @@
       {
          "HasPrimaryKey": true,
          "Name": "[dbo].[RecordTypes]"
-      },
-      {
-         "HasPrimaryKey": true,
-         "Name": "[dbo].[vwImportFiles]"
-      },
-      {
-         "HasPrimaryKey": true,
-         "Name": "[dbo].[vwMachineLogs]"
       }
    ],
    "UseDatabaseNames": false,

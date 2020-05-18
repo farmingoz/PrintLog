@@ -28,7 +28,7 @@ namespace PrintLog.DAL.Models
         public int? TotalPage { get; set; }
         public int? OriginalPages { get; set; }
         public int? FrontPages { get; set; }
-        public string BackPages { get; set; }
+        public int? BackPages { get; set; }
         public int? TotalSheets { get; set; }
         public int? InformationPages { get; set; }
         public int? InformationSheets { get; set; }

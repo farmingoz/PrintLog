@@ -9,7 +9,6 @@ namespace PrintLog.DAL.Models
         public MasterType()
         {
             ImportFiles = new HashSet<ImportFile>();
-            MachineLogs = new HashSet<MachineLog>();
         }
 
         public int TypeId { get; set; }
@@ -19,6 +18,5 @@ namespace PrintLog.DAL.Models
         public int? CycleTime { get; set; }
 
         public virtual ICollection<ImportFile> ImportFiles { get; set; }
-        public virtual ICollection<MachineLog> MachineLogs { get; set; }
     }
 }

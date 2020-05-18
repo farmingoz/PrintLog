@@ -19,14 +19,10 @@ namespace PrintLog.DAL.Data
         }
 
         public virtual DbSet<ImportFile> ImportFiles { get; set; }
-        public virtual DbSet<MachineLog> MachineLogs { get; set; }
-        public virtual DbSet<MachineLogDetail> MachineLogDetails { get; set; }
         public virtual DbSet<MasterType> MasterTypes { get; set; }
         public virtual DbSet<PrinterLog> PrinterLogs { get; set; }
         public virtual DbSet<PrinterLogDetail> PrinterLogDetails { get; set; }
         public virtual DbSet<RecordType> RecordTypes { get; set; }
-        public virtual DbSet<VwImportFile> VwImportFiles { get; set; }
-        public virtual DbSet<VwMachineLog> VwMachineLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -37,6 +33,8 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.ImportId).HasComment("เลขที่การนำเข้าข้อมูล");
 
                 entity.Property(e => e.CountJob).HasComment("จำนวนงานที่นำเข้า");
+
+                entity.Property(e => e.CountJobDetail).HasComment("จำนวนรายละเอียดงานที่นำเข้า");
 
                 entity.Property(e => e.CountLine).HasComment("จำนวนบรรทัดของไฟล์ที่นำเข้า");
 
@@ -58,113 +56,6 @@ namespace PrintLog.DAL.Data
                     .HasForeignKey(d => d.PrinterId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ImportFiles_MasterTypes");
-            });
-
-            modelBuilder.Entity<MachineLog>(entity =>
-            {
-                entity.HasKey(e => new { e.PrinterId, e.JobId })
-                    .HasName("PK_MachineLogs_1");
-
-                entity.Property(e => e.PrinterId).HasComment("เลขที่เครื่องพิมพ์");
-
-                entity.Property(e => e.JobId)
-                    .HasMaxLength(100)
-                    .HasComment("เลขที่งานพิมพ์จากเครื่องพิมพ์");
-
-                entity.Property(e => e.DateCreated)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่ทำการนำเข้า");
-
-                entity.Property(e => e.DateStart)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาเริ่มพิมพ์");
-
-                entity.Property(e => e.ImportId).HasComment("เลขที่การนำเข้าข้อมูล");
-
-                entity.Property(e => e.RawData)
-                    .IsRequired()
-                    .HasComment("ข้อมูลดิบที่อ่านมาได้");
-
-                entity.Property(e => e.Sender)
-                    .HasMaxLength(200)
-                    .HasComment("ชื่อคน หรือ ชื่อเครื่องสั่งพิมพ์");
-
-                entity.Property(e => e.TotalFile).HasComment("จำนวนไฟล์");
-
-                entity.HasOne(d => d.Import)
-                    .WithMany(p => p.MachineLogs)
-                    .HasForeignKey(d => d.ImportId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MachineLogs_ImportFiles");
-
-                entity.HasOne(d => d.Printer)
-                    .WithMany(p => p.MachineLogs)
-                    .HasForeignKey(d => d.PrinterId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MachineLogs_MasterTypes");
-            });
-
-            modelBuilder.Entity<MachineLogDetail>(entity =>
-            {
-                entity.HasKey(e => new { e.PrinterId, e.JobId, e.FileId })
-                    .HasName("PK_MachineLogDetail");
-
-                entity.Property(e => e.PrinterId).HasComment("เลขที่เครื่องพิมพ์");
-
-                entity.Property(e => e.JobId)
-                    .HasMaxLength(100)
-                    .HasComment("เลขที่งานพิมพ์จากเครื่องพิมพ์");
-
-                entity.Property(e => e.FileId).HasComment("เลขที่ไฟล์");
-
-                entity.Property(e => e.DateCreated)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่ทำการนำเข้า");
-
-                entity.Property(e => e.DateEnd)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่พิมพ์เสร็จ");
-
-                entity.Property(e => e.DateModified)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่แก้ไขข้อมูล");
-
-                entity.Property(e => e.FullPath).HasComment("Path เต็ม");
-
-                entity.Property(e => e.ImportId).HasComment("เลขที่การนำเข้าข้อมูล");
-
-                entity.Property(e => e.ImportIdModified).HasComment("เลขที่การแก้ไขข้อมูล");
-
-                entity.Property(e => e.JobName)
-                    .HasMaxLength(200)
-                    .HasComment("ชื่องาน");
-
-                entity.Property(e => e.JobType)
-                    .HasMaxLength(20)
-                    .HasComment("ประเภทไฟล์พิมพ์");
-
-                entity.Property(e => e.RawData)
-                    .IsRequired()
-                    .HasComment("ข้อมูลดิบที่อ่านมาได้");
-
-                entity.Property(e => e.TotalPage).HasComment("จำนวนกระดาษ หรือ จำนวนหน้า");
-
-                entity.HasOne(d => d.Import)
-                    .WithMany(p => p.MachineLogDetailImports)
-                    .HasForeignKey(d => d.ImportId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MachineLogDetail_ImportFiles");
-
-                entity.HasOne(d => d.ImportIdModifiedNavigation)
-                    .WithMany(p => p.MachineLogDetailImportIdModifiedNavigations)
-                    .HasForeignKey(d => d.ImportIdModified)
-                    .HasConstraintName("FK_MachineLogDetail_ImportFiles1");
-
-                entity.HasOne(d => d.MachineLog)
-                    .WithMany(p => p.MachineLogDetails)
-                    .HasForeignKey(d => new { d.PrinterId, d.JobId })
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_MachineLogDetail_MachineLogs");
             });
 
             modelBuilder.Entity<MasterType>(entity =>
@@ -196,10 +87,7 @@ namespace PrintLog.DAL.Data
                     .HasMaxLength(100)
                     .HasComment("[All.JobId] เลขที่งานพิมพ์จากเครื่องพิมพ์");
 
-                entity.Property(e => e.BackPages)
-                    .HasMaxLength(10)
-                    .IsFixedLength()
-                    .HasComment("[1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง");
+                entity.Property(e => e.BackPages).HasComment("[1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง");
 
                 entity.Property(e => e.Client)
                     .HasMaxLength(100)
@@ -392,10 +280,7 @@ namespace PrintLog.DAL.Data
 
                 entity.Property(e => e.FileId).HasComment("[1011.SubId | 1030.SubId] เลขที่ไฟล์");
 
-                entity.Property(e => e.BackPages)
-                    .HasMaxLength(10)
-                    .IsFixedLength()
-                    .HasComment("[1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง");
+                entity.Property(e => e.BackPages).HasComment("[1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง");
 
                 entity.Property(e => e.Copies).HasComment("[1011.Copies | 1031.Filecopies] File copies");
 
@@ -552,48 +437,6 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.Description).HasMaxLength(1000);
 
                 entity.Property(e => e.Name).HasMaxLength(100);
-            });
-
-            modelBuilder.Entity<VwImportFile>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToView("vwImportFiles");
-
-                entity.Property(e => e.DateCreated).HasColumnType("datetime");
-
-                entity.Property(e => e.FileName)
-                    .IsRequired()
-                    .HasMaxLength(200);
-
-                entity.Property(e => e.PrinterName)
-                    .IsRequired()
-                    .HasMaxLength(256);
-            });
-
-            modelBuilder.Entity<VwMachineLog>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToView("vwMachineLogs");
-
-                entity.Property(e => e.DateEnd).HasColumnType("datetime");
-
-                entity.Property(e => e.DateStart).HasColumnType("datetime");
-
-                entity.Property(e => e.JobId)
-                    .IsRequired()
-                    .HasMaxLength(100);
-
-                entity.Property(e => e.JobName).HasMaxLength(200);
-
-                entity.Property(e => e.JobType).HasMaxLength(20);
-
-                entity.Property(e => e.PrinterName)
-                    .IsRequired()
-                    .HasMaxLength(256);
-
-                entity.Property(e => e.Sender).HasMaxLength(200);
             });
 
             OnModelCreatingPartial(modelBuilder);
