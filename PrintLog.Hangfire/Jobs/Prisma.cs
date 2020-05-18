@@ -957,6 +957,11 @@ namespace PrintLog.Hangfire.Jobs {
                                 #endregion
                             }
 
+
+                            // TODO add or update to db
+
+
+
                             dbContext.SaveChanges();
 
                             if (newImport.IsSuccess) {
