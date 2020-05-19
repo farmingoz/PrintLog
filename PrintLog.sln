@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrintLog.DAL", "PrintLog.DA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrintLog.Hangfire", "PrintLog.Hangfire\PrintLog.Hangfire.csproj", "{47F96074-13FE-48A0-9F80-60E483372906}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintLog.Web", "PrintLog.Web\PrintLog.Web.csproj", "{BE8642BF-E649-41E1-AA08-3B58E189F62B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{47F96074-13FE-48A0-9F80-60E483372906}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47F96074-13FE-48A0-9F80-60E483372906}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47F96074-13FE-48A0-9F80-60E483372906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE8642BF-E649-41E1-AA08-3B58E189F62B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE8642BF-E649-41E1-AA08-3B58E189F62B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE8642BF-E649-41E1-AA08-3B58E189F62B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE8642BF-E649-41E1-AA08-3B58E189F62B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
