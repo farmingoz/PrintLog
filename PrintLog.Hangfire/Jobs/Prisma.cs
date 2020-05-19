@@ -20,52 +20,46 @@ namespace PrintLog.Hangfire.Jobs {
         }
 
         public void ReadLog(int printerId) {
-            try {
-                using (var scope = serviceProvider.CreateScope()) {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<PrintlogDbContext>();
-                    var printer = dbContext.MasterTypes.FirstOrDefault(f => f.TypeId == printerId);
-                    if (printer != null) {
-                        string printerName = printer.TypeName;
-                        int cycleTime = printer.CycleTime.Value;
-                        string maxJobId = dbContext.PrinterLogs.Where(w => w.PrinterId == printerId && w.CycleTime == cycleTime).Max(m => m.JobId);
+            using (var scope = serviceProvider.CreateScope()) {
+                var dbContext = scope.ServiceProvider.GetRequiredService<PrintlogDbContext>();
+                var printer = dbContext.MasterTypes.FirstOrDefault(f => f.TypeId == printerId);
+                if (printer != null) {
+                    string printerName = printer.TypeName;
+                    int cycleTime = printer.CycleTime.Value;
 
-                        string pathInput = Path.Combine(Configs.RootPath, @"Inbox", printerName);
-                        string pathOutputSuccess = Path.Combine(Configs.RootPath, @"Outbox\Successfully", printerName);
-                        string pathOutputFailed = Path.Combine(Configs.RootPath, @"Outbox\Failed", printerName);
+                    string pathInput = Path.Combine(Configs.RootPath, @"Inbox", printerName);
+                    string pathOutputSuccess = Path.Combine(Configs.RootPath, @"Outbox\Successfully", printerName);
+                    string pathOutputFailed = Path.Combine(Configs.RootPath, @"Outbox\Failed", printerName);
 
-                        if (!Directory.Exists(pathOutputSuccess)) {
-                            Directory.CreateDirectory(pathOutputSuccess);
-                        }
+                    if (!Directory.Exists(pathOutputSuccess)) {
+                        Directory.CreateDirectory(pathOutputSuccess);
+                    }
 
-                        if (!Directory.Exists(pathOutputFailed)) {
-                            Directory.CreateDirectory(pathOutputFailed);
-                        }
+                    if (!Directory.Exists(pathOutputFailed)) {
+                        Directory.CreateDirectory(pathOutputFailed);
+                    }
 
-                        foreach (string file in Directory.EnumerateFiles(pathInput, "*.acc")) {
-                            DateTime dateTimeNow = DateTime.Now;
-                            ImportFile newImport = new ImportFile() {
-                                PrinterId = printerId,
-                                FileName = Path.GetFileName(file),
-                                CountLine = 0,
-                                CountJob = 0,
-                                CountJobDetail = 0,
-                                IsSuccess = false,
-                                DateCreated = dateTimeNow,
-                            };
-                            dbContext.ImportFiles.Add(newImport);
-                            int rnt = dbContext.SaveChanges();
+                    foreach (string file in Directory.EnumerateFiles(pathInput, "*.acc")) {
+                        DateTime dateTimeNow = DateTime.Now;
+                        #region Add ImportFile
+                        ImportFile newImport = new ImportFile() {
+                            PrinterId = printerId,
+                            FileName = Path.GetFileName(file),
+                            CountLine = 0,
+                            CountJob = 0,
+                            CountJobDetail = 0,
+                            IsSuccess = false,
+                            DateCreated = dateTimeNow,
+                        };
+                        #endregion
+                        dbContext.ImportFiles.Add(newImport);
+                        int rnt = dbContext.SaveChanges();
 
-                            ImportFile importFile = new ImportFile();
-                            if (rnt != -1) {
-                                string filename = Path.GetFileName(file);
-                                importFile = dbContext.ImportFiles.OrderByDescending(o => o.DateCreated).FirstOrDefault(w => w.FileName == filename);
-                                newImport.ImportId = importFile.ImportId;
-                            }
+                        List<PrinterLog> LstPrinterLog = new List<PrinterLog>();
+                        List<PrinterLogDetail> LstPrinterLogDetail = new List<PrinterLogDetail>();
+                        StreamReader reader = new StreamReader(file);
 
-                            List<PrinterLog> LstPrinterLog = new List<PrinterLog>();
-                            List<PrinterLogDetail> LstPrinterLogDetail = new List<PrinterLogDetail>();
-
-                            StreamReader reader = new StreamReader(file);
+                        try {
                             while (!reader.EndOfStream) {
                                 string line = reader.ReadLine();
                                 newImport.CountLine++;
@@ -74,6 +68,10 @@ namespace PrintLog.Hangfire.Jobs {
                                 string[] jobIdSplited = value[1].Split('.');
                                 string jobId = jobIdSplited[0];
                                 int recordType = value[0].ToInt();
+
+                                if (jobId == "00000001") {
+                                    cycleTime = printer.CycleTime.Value + 1;
+                                }
 
                                 #region recordType == 1000
                                 if (recordType == 1000) {
@@ -88,7 +86,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     }
                                 }
                                 #endregion
@@ -123,7 +120,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     } else {
                                         updatePrinterLog.RawData += line;
                                         updatePrinterLog.Client = value[2];
@@ -163,7 +159,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     }
 
                                     if (jobIdSplited.Length > 1) {
@@ -179,7 +174,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobType = value[2],
                                                 FullPath = value[3],
                                                 JobName = Path.GetFileName(value[3]),
-                                                Filesize = value[4].ToInt(),
+                                                Filesize = value[4].ToInt64(),
                                                 Copies = value[5].ToInt(),
                                                 Formdef = value[6],
                                                 Pagedef = value[7],
@@ -193,7 +188,7 @@ namespace PrintLog.Hangfire.Jobs {
                                             updatePrinterLogDetail.JobType = value[2];
                                             updatePrinterLogDetail.FullPath = value[3];
                                             updatePrinterLogDetail.JobName = Path.GetFileName(value[3]);
-                                            updatePrinterLogDetail.Filesize = value[4].ToInt();
+                                            updatePrinterLogDetail.Filesize = value[4].ToInt64();
                                             updatePrinterLogDetail.Copies = value[5].ToInt();
                                             updatePrinterLogDetail.Formdef = value[6];
                                             updatePrinterLogDetail.Pagedef = value[7];
@@ -220,7 +215,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     } else {
                                         updatePrinterLog.RawData += line;
                                         updatePrinterLog.UserExplorer = value[2];
@@ -245,7 +239,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     }
                                 }
                                 #endregion
@@ -271,7 +264,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.Sender = value[2];
@@ -371,7 +363,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.UserExplorer = value[2];
@@ -407,7 +398,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.UserExplorer = value[2];
@@ -444,7 +434,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJobDetail++;
                                         } else {
                                             updatePrinterLogDetail.RawData += line;
                                             updatePrinterLogDetail.UserExplorer = value[2];
@@ -477,7 +466,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     }
                                 }
                                 #endregion
@@ -494,7 +482,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     }
                                 }
                                 #endregion
@@ -527,7 +514,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -574,7 +560,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -621,7 +606,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJobDetail++;
                                         } else {
                                             updatePrinterLogDetail.RawData += line;
                                             updatePrinterLogDetail.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -659,7 +643,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         }
                                     } else {
                                         int fileId = jobIdSplited[1].ToInt();
@@ -675,7 +658,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJobDetail++;
                                         }
                                     }
                                 }
@@ -697,7 +679,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
@@ -722,7 +703,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
@@ -747,7 +727,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJobDetail++;
                                         } else {
                                             updatePrinterLogDetail.RawData += line;
                                             updatePrinterLogDetail.TotalSheets = value[3].ToInt();
@@ -775,7 +754,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
@@ -796,7 +774,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
@@ -817,7 +794,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJobDetail++;
                                         } else {
                                             updatePrinterLogDetail.RawData += line;
                                             updatePrinterLogDetail.TotalSheets = value[3].ToInt();
@@ -849,7 +825,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -880,7 +855,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJob++;
                                         } else {
                                             updatePrinterLog.RawData += line;
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -911,7 +885,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
-                                            newImport.CountJobDetail++;
                                         } else {
                                             updatePrinterLogDetail.RawData += line;
                                             updatePrinterLogDetail.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -944,7 +917,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
                                         });
-                                        newImport.CountJob++;
                                     } else {
                                         updatePrinterLog.RawData += line;
                                         updatePrinterLog.Client = value[2];
@@ -956,38 +928,148 @@ namespace PrintLog.Hangfire.Jobs {
                                 }
                                 #endregion
                             }
+                            reader.Close();
 
+                            var printerLogs = dbContext.PrinterLogs.Where(w => w.PrinterId == printerId).ToList();
+                            foreach (var printerLog in LstPrinterLog) {
+                                var printerLogInfo = printerLogs.FirstOrDefault(f => f.JobId == printerLog.JobId && f.CycleTime == printerLog.CycleTime);
+                                if (printerLogInfo != null) {
+                                    #region Update PrinterLogs
+                                    printerLogInfo.Client = printerLog.Client ?? printerLogInfo.Client;
+                                    printerLogInfo.Sender = printerLog.Sender ?? printerLogInfo.Sender;
+                                    printerLogInfo.Printer = printerLog.Printer ?? printerLogInfo.Printer;
+                                    printerLogInfo.Jobqueue = printerLog.Jobqueue ?? printerLogInfo.Jobqueue;
+                                    printerLogInfo.Resolution = printerLog.Resolution ?? printerLogInfo.Resolution;
+                                    printerLogInfo.Proofprint = printerLog.Proofprint ?? printerLogInfo.Proofprint;
+                                    printerLogInfo.Storeprint = printerLog.Storeprint ?? printerLogInfo.Storeprint;
+                                    printerLogInfo.CustAcc = printerLog.CustAcc ?? printerLogInfo.CustAcc;
+                                    printerLogInfo.ReferenceId = printerLog.ReferenceId ?? printerLogInfo.ReferenceId;
+                                    printerLogInfo.Form = printerLog.Form ?? printerLogInfo.Form;
+                                    printerLogInfo.TicketName = printerLog.TicketName ?? printerLogInfo.TicketName;
+                                    printerLogInfo.JobName = printerLog.JobName ?? printerLogInfo.JobName;
+                                    printerLogInfo.OrderId = printerLog.OrderId ?? printerLogInfo.OrderId;
+                                    printerLogInfo.Range = printerLog.Range ?? printerLogInfo.Range;
+                                    printerLogInfo.ColorIds = printerLog.ColorIds ?? printerLogInfo.ColorIds;
+                                    printerLogInfo.TrackingEnabled = printerLog.TrackingEnabled ?? printerLogInfo.TrackingEnabled;
+                                    printerLogInfo.TotalFile = printerLog.TotalFile ?? printerLogInfo.TotalFile;
+                                    printerLogInfo.UserExplorer = printerLog.UserExplorer ?? printerLogInfo.UserExplorer;
+                                    printerLogInfo.StatusExplorer = printerLog.StatusExplorer ?? printerLogInfo.StatusExplorer;
+                                    printerLogInfo.JobType = printerLog.JobType ?? printerLogInfo.JobType;
+                                    printerLogInfo.Simplex = printerLog.Simplex ?? printerLogInfo.Simplex;
+                                    printerLogInfo.Duplex = printerLog.Duplex ?? printerLogInfo.Duplex;
+                                    printerLogInfo.TotalPage = printerLog.TotalPage ?? printerLogInfo.TotalPage;
+                                    printerLogInfo.OriginalPages = printerLog.OriginalPages ?? printerLogInfo.OriginalPages;
+                                    printerLogInfo.FrontPages = printerLog.FrontPages ?? printerLogInfo.FrontPages;
+                                    printerLogInfo.BackPages = printerLog.BackPages ?? printerLogInfo.BackPages;
+                                    printerLogInfo.TotalSheets = printerLog.TotalSheets ?? printerLogInfo.TotalSheets;
+                                    printerLogInfo.InformationPages = printerLog.InformationPages ?? printerLogInfo.InformationPages;
+                                    printerLogInfo.InformationSheets = printerLog.InformationSheets ?? printerLogInfo.InformationSheets;
+                                    printerLogInfo.TotalOffsets = printerLog.TotalOffsets ?? printerLogInfo.TotalOffsets;
+                                    printerLogInfo.Feet = printerLog.Feet ?? printerLogInfo.Feet;
+                                    printerLogInfo.Nup = printerLog.Nup ?? printerLogInfo.Nup;
+                                    printerLogInfo.WidthPage = printerLog.WidthPage ?? printerLogInfo.WidthPage;
+                                    printerLogInfo.LengthPage = printerLog.LengthPage ?? printerLogInfo.LengthPage;
+                                    printerLogInfo.DateSubmission = printerLog.DateSubmission ?? printerLogInfo.DateSubmission;
+                                    printerLogInfo.DateExplorer = printerLog.DateExplorer ?? printerLogInfo.DateExplorer;
+                                    printerLogInfo.DateStartQueue = printerLog.DateStartQueue ?? printerLogInfo.DateStartQueue;
+                                    printerLogInfo.DateEndQueue = printerLog.DateEndQueue ?? printerLogInfo.DateEndQueue;
+                                    printerLogInfo.DateStart = printerLog.DateStart ?? printerLogInfo.DateStart;
+                                    printerLogInfo.DateEnd = printerLog.DateEnd ?? printerLogInfo.DateEnd;
+                                    printerLogInfo.RawData += printerLog.RawData;
+                                    printerLogInfo.ImportIdModified = printerLog.ImportIdModified;
+                                    printerLogInfo.DateModified = printerLog.DateModified;
+                                    printerLogInfo.LastRecordType = printerLog.LastRecordType;
+                                    #endregion
+                                } else {
+                                    #region Add PrinterLogs
+                                    dbContext.PrinterLogs.Add(printerLog);
+                                    newImport.CountJob++;
+                                    #endregion
+                                }
+                            }
 
-                            // TODO add or update to db
+                            var printerLogDetails = dbContext.PrinterLogDetails.Where(w => w.PrinterId == printerId).ToList();
+                            foreach (var printerLogDetail in LstPrinterLogDetail) {
+                                var printerLogDetailInfo = printerLogDetails.FirstOrDefault(f => f.JobId == printerLogDetail.JobId && f.CycleTime == printerLogDetail.CycleTime && f.FileId == printerLogDetail.FileId);
+                                if (printerLogDetailInfo != null) {
+                                    #region Update PrinterLogDetails
+                                    printerLogDetailInfo.JobType = printerLogDetail.JobType ?? printerLogDetailInfo.JobType;
+                                    printerLogDetailInfo.FullPath = printerLogDetail.FullPath ?? printerLogDetailInfo.FullPath;
+                                    printerLogDetailInfo.JobName = printerLogDetail.JobName ?? printerLogDetailInfo.JobName;
+                                    printerLogDetailInfo.Filesize = printerLogDetail.Filesize ?? printerLogDetailInfo.Filesize;
+                                    printerLogDetailInfo.Copies = printerLogDetail.Copies ?? printerLogDetailInfo.Copies;
+                                    printerLogDetailInfo.Formdef = printerLogDetail.Formdef ?? printerLogDetailInfo.Formdef;
+                                    printerLogDetailInfo.Pagedef = printerLogDetail.Pagedef ?? printerLogDetailInfo.Pagedef;
+                                    printerLogDetailInfo.UserExplorer = printerLogDetail.UserExplorer ?? printerLogDetailInfo.UserExplorer;
+                                    printerLogDetailInfo.StatusExplorer = printerLogDetail.StatusExplorer ?? printerLogDetailInfo.StatusExplorer;
+                                    printerLogDetailInfo.Printer = printerLogDetail.Printer ?? printerLogDetailInfo.Printer;
+                                    printerLogDetailInfo.Jobqueue = printerLogDetail.Jobqueue ?? printerLogDetailInfo.Jobqueue;
+                                    printerLogDetailInfo.Range = printerLogDetail.Range ?? printerLogDetailInfo.Range;
+                                    printerLogDetailInfo.Form = printerLogDetail.Form ?? printerLogDetailInfo.Form;
+                                    printerLogDetailInfo.Simplex = printerLogDetail.Simplex ?? printerLogDetailInfo.Simplex;
+                                    printerLogDetailInfo.Duplex = printerLogDetail.Duplex ?? printerLogDetailInfo.Duplex;
+                                    printerLogDetailInfo.TotalPage = printerLogDetail.TotalPage ?? printerLogDetailInfo.TotalPage;
+                                    printerLogDetailInfo.OriginalPages = printerLogDetail.OriginalPages ?? printerLogDetailInfo.OriginalPages;
+                                    printerLogDetailInfo.FrontPages = printerLogDetail.FrontPages ?? printerLogDetailInfo.FrontPages;
+                                    printerLogDetailInfo.BackPages = printerLogDetail.BackPages ?? printerLogDetailInfo.BackPages;
+                                    printerLogDetailInfo.TotalSheets = printerLogDetail.TotalSheets ?? printerLogDetailInfo.TotalSheets;
+                                    printerLogDetailInfo.InformationPages = printerLogDetail.InformationPages ?? printerLogDetailInfo.InformationPages;
+                                    printerLogDetailInfo.InformationSheets = printerLogDetail.InformationSheets ?? printerLogDetailInfo.InformationSheets;
+                                    printerLogDetailInfo.TotalOffsets = printerLogDetail.TotalOffsets ?? printerLogDetailInfo.TotalOffsets;
+                                    printerLogDetailInfo.Feet = printerLogDetail.Feet ?? printerLogDetailInfo.Feet;
+                                    printerLogDetailInfo.Nup = printerLogDetail.Nup ?? printerLogDetailInfo.Nup;
+                                    printerLogDetailInfo.WidthPage = printerLogDetail.WidthPage ?? printerLogDetailInfo.WidthPage;
+                                    printerLogDetailInfo.LengthPage = printerLogDetail.LengthPage ?? printerLogDetailInfo.LengthPage;
+                                    printerLogDetailInfo.DateSubmission = printerLogDetail.DateSubmission ?? printerLogDetailInfo.DateSubmission;
+                                    printerLogDetailInfo.DateStartQueue = printerLogDetail.DateStartQueue ?? printerLogDetailInfo.DateStartQueue;
+                                    printerLogDetailInfo.DateEndQueue = printerLogDetail.DateEndQueue ?? printerLogDetailInfo.DateEndQueue;
+                                    printerLogDetailInfo.DateStart = printerLogDetail.DateStart ?? printerLogDetailInfo.DateStart;
+                                    printerLogDetailInfo.DateEnd = printerLogDetail.DateEnd ?? printerLogDetailInfo.DateEnd;
+                                    printerLogDetailInfo.RawData += printerLogDetail.RawData;
+                                    printerLogDetailInfo.ImportIdModified = printerLogDetail.ImportIdModified;
+                                    printerLogDetailInfo.DateModified = printerLogDetail.DateModified;
+                                    printerLogDetailInfo.LastRecordType = printerLogDetail.LastRecordType;
+                                    #endregion
+                                } else {
+                                    #region Add PrinterLogDetails
+                                    dbContext.PrinterLogDetails.Add(printerLogDetail);
+                                    newImport.CountJobDetail++;
+                                    #endregion
+                                }
+                            }
 
-
+                            printer.CycleTime = cycleTime;
+                            newImport.IsSuccess = true;
 
                             dbContext.SaveChanges();
 
-                            if (newImport.IsSuccess) {
-                                string pathSuccess = Path.Combine(pathOutputSuccess, Path.GetFileName(file));
-                                int runningNo = 2;
-                                while (File.Exists(pathSuccess)) {
-                                    pathSuccess = Path.Combine(pathOutputSuccess, Path.GetFileNameWithoutExtension(file) + "_v" + runningNo + Path.GetExtension(file));
-                                    runningNo++;
-                                }
-                                File.Copy(file, pathSuccess);
-                                File.Delete(file);
-                            } else {
-                                string pathFailed = Path.Combine(pathOutputFailed, Path.GetFileName(file));
-                                int runningNo = 2;
-                                while (File.Exists(pathFailed)) {
-                                    pathFailed = Path.Combine(pathOutputFailed, Path.GetFileNameWithoutExtension(file) + "_v" + runningNo + Path.GetExtension(file));
-                                    runningNo++;
-                                }
-                                File.Copy(file, pathFailed);
-                                File.Delete(file);
+                            #region Move Input File to Success
+                            string pathSuccess = Path.Combine(pathOutputSuccess, Path.GetFileName(file));
+                            int runningNo = 2;
+                            while (File.Exists(pathSuccess)) {
+                                pathSuccess = Path.Combine(pathOutputSuccess, Path.GetFileNameWithoutExtension(file) + "_v" + runningNo + Path.GetExtension(file));
+                                runningNo++;
                             }
+                            File.Copy(file, pathSuccess);
+                            File.Delete(file);
+                            #endregion
+                        } catch (Exception ex) {
+                            reader.Close();
+                            ex.ToExceptionless().AddObject(printerId, "printerId").AddObject(file, "file").AddObject(newImport, "newImport").Submit();
+
+                            #region Move Input File to Failed
+                            string pathFailed = Path.Combine(pathOutputFailed, Path.GetFileName(file));
+                            int runningNo = 2;
+                            while (File.Exists(pathFailed)) {
+                                pathFailed = Path.Combine(pathOutputFailed, Path.GetFileNameWithoutExtension(file) + "_v" + runningNo + Path.GetExtension(file));
+                                runningNo++;
+                            }
+                            File.Copy(file, pathFailed);
+                            File.Delete(file);
+                            #endregion
                         }
                     }
                 }
-            } catch(Exception ex) {
-                ex.ToExceptionless().AddObject(printerId).Submit();
             }
         }
     }

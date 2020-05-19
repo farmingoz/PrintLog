@@ -13,7 +13,7 @@ namespace PrintLog.DAL.Models
         public string JobType { get; set; }
         public string FullPath { get; set; }
         public string JobName { get; set; }
-        public int? Filesize { get; set; }
+        public long? Filesize { get; set; }
         public int? Copies { get; set; }
         public string Formdef { get; set; }
         public string Pagedef { get; set; }

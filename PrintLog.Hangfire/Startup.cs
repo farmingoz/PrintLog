@@ -72,7 +72,7 @@ namespace PrintLog.Hangfire {
 
             // Add the processing server as IHostedService
             services.AddHangfireServer(opt => {
-                opt.Queues = new[] { "PrintLog" };
+                opt.Queues = new[] { "printlog" };
             });
 
             services.AddTransient<IDashboardAuthorizationFilter, DashboardAuthorizationFilter>();
