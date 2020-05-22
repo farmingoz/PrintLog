@@ -72,7 +72,7 @@ namespace PrintLog.Hangfire {
 
             // Add the processing server as IHostedService
             services.AddHangfireServer(opt => {
-                opt.Queues = new[] { "printlog" };
+                opt.Queues = new[] { "default" };
             });
 
             services.AddTransient<IDashboardAuthorizationFilter, DashboardAuthorizationFilter>();
@@ -106,10 +106,10 @@ namespace PrintLog.Hangfire {
             });
             lifetime.ApplicationStarted.Register(() => {
                 var scheduler = app.ApplicationServices.GetRequiredService<MasterSchedule>();
-                RecurringJob.AddOrUpdate("UpdateJob", () => scheduler.UpdateJob(), "0 5 * * *", TimeZoneInfo.Local, "printlog");
+                RecurringJob.AddOrUpdate("UpdateJob", () => scheduler.UpdateJob(), "0 5 * * *");
 
                 var autoDelete = app.ApplicationServices.GetRequiredService<AutoDelete>();
-                RecurringJob.AddOrUpdate("AutoDelete", () => autoDelete.DeleteLog(), "0 4 * * *", TimeZoneInfo.Local, "printlog");
+                RecurringJob.AddOrUpdate("AutoDelete", () => autoDelete.DeleteLog(), "0 4 * * *");
             });
             lifetime.ApplicationStopping.Register(() => {
                 SqlServerStorage.Current.GetConnection().Dispose();

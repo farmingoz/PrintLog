@@ -25,9 +25,9 @@ namespace PrintLog.Hangfire.Jobs {
 
                     foreach (var printer in lstPrinter) {
                         if (printer.RefNo == 2000) {
-                            RecurringJob.AddOrUpdate(printer.TypeName, () => prisma.ReadLog(printer.TypeId), "*/10 * * * *", TimeZoneInfo.Local, "printlog");
+                            RecurringJob.AddOrUpdate(printer.TypeName, () => prisma.ReadLog(printer.TypeId), "*/10 * * * *");
                         } else if (printer.RefNo == 2001) {
-                            RecurringJob.AddOrUpdate(printer.TypeName, () => shiki.ReadLog(printer.TypeId), "*/10 * * * *", TimeZoneInfo.Local, "printlog");
+                            RecurringJob.AddOrUpdate(printer.TypeName, () => shiki.ReadLog(printer.TypeId), "*/10 * * * *");
                         }
                     }
                 }
