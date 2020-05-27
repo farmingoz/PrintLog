@@ -20,11 +20,13 @@ namespace PrintLog.Hangfire.Jobs {
                     var dbContext = scope.ServiceProvider.GetRequiredService<PrintlogDbContext>();
                     DateTime limit = DateTime.Now.AddDays(-90).Date;
 
+                    var detailExpires = dbContext.PrinterLogDetails.Where(w => w.DateCreated <= limit);
+                    dbContext.PrinterLogDetails.RemoveRange(detailExpires);
+
                     var mainExpires = dbContext.PrinterLogs.Where(w => w.DateCreated <= limit);
                     dbContext.PrinterLogs.RemoveRange(mainExpires);
 
-                    var detailExpires = dbContext.PrinterLogDetails.Where(w => w.DateCreated <= limit);
-                    dbContext.PrinterLogDetails.RemoveRange(detailExpires);
+                    dbContext.SaveChanges();
                 }
             } catch(Exception ex) {
                 ex.ToExceptionless().Submit();

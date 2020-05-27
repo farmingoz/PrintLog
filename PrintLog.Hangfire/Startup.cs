@@ -106,10 +106,10 @@ namespace PrintLog.Hangfire {
             });
             lifetime.ApplicationStarted.Register(() => {
                 var scheduler = app.ApplicationServices.GetRequiredService<MasterSchedule>();
-                RecurringJob.AddOrUpdate("UpdateJob", () => scheduler.UpdateJob(), "0 5 * * *");
+                RecurringJob.AddOrUpdate("UpdateJob", () => scheduler.UpdateJob(), "0 5 * * *", TimeZoneInfo.Local, "default");
 
                 var autoDelete = app.ApplicationServices.GetRequiredService<AutoDelete>();
-                RecurringJob.AddOrUpdate("AutoDelete", () => autoDelete.DeleteLog(), "0 4 * * *");
+                RecurringJob.AddOrUpdate("AutoDelete", () => autoDelete.DeleteLog(), "0 4 * * *", TimeZoneInfo.Local, "default");
             });
             lifetime.ApplicationStopping.Register(() => {
                 SqlServerStorage.Current.GetConnection().Dispose();
