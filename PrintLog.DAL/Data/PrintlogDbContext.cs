@@ -4,11 +4,21 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using PrintLog.DAL.Models;
+using System.Threading.Tasks;
 
 namespace PrintLog.DAL.Data
 {
     public partial class PrintlogDbContext : DbContext
     {
+        public override void Dispose() {
+            base.Dispose();
+            GC.SuppressFinalize(this);
+        }
+
+        public override ValueTask DisposeAsync() {
+            return base.DisposeAsync();
+        }
+
         public PrintlogDbContext()
         {
         }
@@ -84,23 +94,23 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.PrinterId).HasComment("เลขที่เครื่องพิมพ์");
 
                 entity.Property(e => e.JobId)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[All.JobId] เลขที่งานพิมพ์จากเครื่องพิมพ์");
 
                 entity.Property(e => e.BackPages).HasComment("[1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง");
 
                 entity.Property(e => e.Client)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Client | 1130.Client] host name หรือ IP address ที่วางงาน");
 
                 entity.Property(e => e.ColorIds)
                     .HasColumnName("Color_Ids")
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Color_Ids] Comma separated list of color-ids");
 
                 entity.Property(e => e.CustAcc)
                     .HasColumnName("Cust_acc")
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Cust_acc] รหัสลูกค้า");
 
                 entity.Property(e => e.DateCreated)
@@ -140,7 +150,7 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.Feet).HasComment("[1040.Feet] จำนวนความยาวของกระดาษ หน่วยเป็นฟุต");
 
                 entity.Property(e => e.Form)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Form | 1031.Form] Content of the FORM parameter (not used = empty)");
 
                 entity.Property(e => e.FrontPages).HasComment("[1040.FPages] จำนวนหน้าที่พิมพ์ด้านหน้า");
@@ -154,11 +164,11 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.InformationSheets).HasComment("[1040.ISheets] จำนวนกระดาษของใบปะหน้า");
 
                 entity.Property(e => e.JobName)
-                    .HasMaxLength(200)
+                    .HasMaxLength(512)
                     .HasComment("[1010.Job-Name | 1030.Jobname | 1031.Jobname] Name of the job");
 
                 entity.Property(e => e.JobType)
-                    .HasMaxLength(20)
+                    .HasMaxLength(128)
                     .HasComment("[1030.Filetype] ประเภทไฟล์พิมพ์");
 
                 entity.Property(e => e.Jobqueue).HasComment("[1010.Jobqueue | 1030.Jobqueue | 1031.Jobqueue]");
@@ -199,34 +209,30 @@ namespace PrintLog.DAL.Data
 
                 entity.Property(e => e.OrderId)
                     .HasColumnName("Order_Id")
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Order_Id] Job order id");
 
                 entity.Property(e => e.OriginalPages).HasComment("[1040.OPages] จำนวนหน้างานต้นฉบับ");
 
                 entity.Property(e => e.Printer)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Printer | 1030.Printer | 1031.Printer] ชื่อเครื่องพิมพ์ในระบบ");
 
                 entity.Property(e => e.Proofprint).HasComment("[1010.Proofprint] Yes/No");
 
                 entity.Property(e => e.Range)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Range | 1031.Range] หน้าที่ต้องการพิมพ์");
-
-                entity.Property(e => e.RawData)
-                    .IsRequired()
-                    .HasComment("ข้อมูลดิบที่อ่านมาได้");
 
                 entity.Property(e => e.ReferenceId)
                     .HasColumnName("Reference_Id")
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Reference_Id] Reference-id of a parent job");
 
                 entity.Property(e => e.Resolution).HasComment("[1010.Resolution | 1030.Resolution] ค่าความระเอียดของการพิมพ์ หรือ Dpi (240, 300, 600)");
 
                 entity.Property(e => e.Sender)
-                    .HasMaxLength(200)
+                    .HasMaxLength(512)
                     .HasComment("[1010.User | 1030.User name] ชื่อคน หรือ ชื่อเครื่องสั่งพิมพ์");
 
                 entity.Property(e => e.Simplex).HasComment("[1040.Simplex] simplex mode 0 : no, 1 : yes");
@@ -245,7 +251,7 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.Storeprint).HasComment("[1010.Storeprint] Yes/No");
 
                 entity.Property(e => e.TicketName)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1010.Ticket-Name] File name of the job ticket");
 
                 entity.Property(e => e.TotalFile).HasComment("[Count(1011)] จำนวนไฟล์");
@@ -261,7 +267,7 @@ namespace PrintLog.DAL.Data
                     .HasComment("[1010.Tracking_Enabled] Info if a job is tracked");
 
                 entity.Property(e => e.UserExplorer)
-                    .HasMaxLength(200)
+                    .HasMaxLength(512)
                     .HasComment("[1012.User name | 1031.User name] User ที่นำออก");
 
                 entity.Property(e => e.WidthPage).HasComment("[1042.Swid] Width of page (1/6 inch)");
@@ -275,7 +281,7 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.PrinterId).HasComment("เลขที่เครื่องพิมพ์");
 
                 entity.Property(e => e.JobId)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1011.JobId | 1030.JobId] เลขที่งานพิมพ์จากเครื่องพิมพ์");
 
                 entity.Property(e => e.FileId).HasComment("[1011.SubId | 1030.SubId] เลขที่ไฟล์");
@@ -319,11 +325,11 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.Filesize).HasComment("[1011.Filesize] File size value in bytes or 0 if unknown");
 
                 entity.Property(e => e.Form)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1031.Form] Content of the FORM parameter (not used = empty)");
 
                 entity.Property(e => e.Formdef)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1011.Formdef] FORMDEF value");
 
                 entity.Property(e => e.FrontPages).HasComment("[1040.FPages] จำนวนหน้าที่พิมพ์ด้านหน้า");
@@ -339,11 +345,11 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.InformationSheets).HasComment("[1040.ISheets] จำนวนกระดาษของใบปะหน้า");
 
                 entity.Property(e => e.JobName)
-                    .HasMaxLength(200)
+                    .HasMaxLength(512)
                     .HasComment("[1011.Filename | 1030.Filename | 1031.Filename] ชื่องาน");
 
                 entity.Property(e => e.JobType)
-                    .HasMaxLength(20)
+                    .HasMaxLength(128)
                     .HasComment("[1011.Filetype | 1030.Filetype] ประเภทไฟล์พิมพ์");
 
                 entity.Property(e => e.Jobqueue).HasComment("[1031.Jobqueue]");
@@ -385,20 +391,16 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.OriginalPages).HasComment("[1040.OPages] จำนวนหน้างานต้นฉบับ");
 
                 entity.Property(e => e.Pagedef)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1011.Pagedef] PAGEDEF value");
 
                 entity.Property(e => e.Printer)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1031.Printer] ชื่อเครื่องพิมพ์ในระบบ");
 
                 entity.Property(e => e.Range)
-                    .HasMaxLength(100)
+                    .HasMaxLength(256)
                     .HasComment("[1031.Range] หน้าที่ต้องการพิมพ์");
-
-                entity.Property(e => e.RawData)
-                    .IsRequired()
-                    .HasComment("ข้อมูลดิบที่อ่านมาได้");
 
                 entity.Property(e => e.Simplex).HasComment("[1040.Simplex] simplex mode 0 : no, 1 : yes");
 
@@ -420,7 +422,7 @@ namespace PrintLog.DAL.Data
                 entity.Property(e => e.TotalSheets).HasComment("[1040.Sheets] จำนวนกระดาษที่พิมพ์");
 
                 entity.Property(e => e.UserExplorer)
-                    .HasMaxLength(200)
+                    .HasMaxLength(512)
                     .HasComment("[1012.User name | 1031.User name] User ที่นำออก");
 
                 entity.Property(e => e.WidthPage).HasComment("[1042.Swid] Width of page (1/6 inch)");

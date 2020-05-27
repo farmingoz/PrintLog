@@ -8,15 +8,15 @@ using System.Linq;
 
 namespace PrintLog.Hangfire.Jobs {
     public class MasterSchedule {
-        private readonly IServiceProvider serviceProvider;
+        private readonly IServiceScopeFactory serviceScopeFactory;
 
-        public MasterSchedule(IServiceProvider serviceProvider) {
-            this.serviceProvider = serviceProvider;
+        public MasterSchedule(IServiceScopeFactory serviceScopeFactory) {
+            this.serviceScopeFactory = serviceScopeFactory;
         }
 
         public void UpdateJob() {
             try {
-                using (var scope = serviceProvider.CreateScope()) {
+                using (var scope = serviceScopeFactory.CreateScope()) {
                     var dbContext = scope.ServiceProvider.GetRequiredService<PrintlogDbContext>();
                     var prisma = scope.ServiceProvider.GetRequiredService<Prisma>();
                     var shiki = scope.ServiceProvider.GetRequiredService<Shiki>();

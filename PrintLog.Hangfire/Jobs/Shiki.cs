@@ -11,11 +11,16 @@ using System.Threading.Tasks;
 using TKSLibrary;
 
 namespace PrintLog.Hangfire.Jobs {
-    public class Shiki {
-        private readonly IServiceProvider serviceProvider;
+    public class Shiki : IDisposable {
+        private readonly PrintlogDbContext dbContext;
 
-        public Shiki(IServiceProvider serviceProvider) {
-            this.serviceProvider = serviceProvider;
+        public Shiki(PrintlogDbContext dbContext) {
+            this.dbContext = dbContext;
+        }
+
+        public void Dispose() {
+            dbContext.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public void ReadLog(int printerId) {

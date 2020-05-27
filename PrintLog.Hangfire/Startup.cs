@@ -77,9 +77,9 @@ namespace PrintLog.Hangfire {
 
             services.AddTransient<IDashboardAuthorizationFilter, DashboardAuthorizationFilter>();
             services.AddSingleton<MasterSchedule>();
-            services.AddSingleton<Prisma>();
-            services.AddSingleton<Shiki>();
             services.AddSingleton<AutoDelete>();
+            services.AddScoped<Prisma>();
+            services.AddScoped<Shiki>();
             // Add framework services.
             services.AddControllersWithViews();
         }

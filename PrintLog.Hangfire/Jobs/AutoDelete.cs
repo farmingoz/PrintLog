@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 namespace PrintLog.Hangfire.Jobs {
     public class AutoDelete {
-        private readonly IServiceProvider serviceProvider;
+        private readonly IServiceScopeFactory serviceScopeFactory;
 
-        public AutoDelete(IServiceProvider serviceProvider) {
-            this.serviceProvider = serviceProvider;
+        public AutoDelete(IServiceScopeFactory serviceScopeFactory) {
+            this.serviceScopeFactory = serviceScopeFactory;
         }
 
         public void DeleteLog() {
             try {
-                using (var scope = serviceProvider.CreateScope()) {
+                using (var scope = serviceScopeFactory.CreateScope()) {
                     var dbContext = scope.ServiceProvider.GetRequiredService<PrintlogDbContext>();
                     DateTime limit = DateTime.Now.AddDays(-90).Date;
 

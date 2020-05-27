@@ -1,5 +1,6 @@
 ﻿using Exceptionless;
 using Exceptionless.Extensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PrintLog.DAL.Data;
 using PrintLog.DAL.Models;
@@ -12,53 +13,57 @@ using System.Threading.Tasks;
 using TKSLibrary;
 
 namespace PrintLog.Hangfire.Jobs {
-    public class Prisma {
-        private readonly IServiceProvider serviceProvider;
+    public class Prisma : IDisposable {
+        private const int BatchSize = 200;
+        private readonly PrintlogDbContext dbContext;
 
-        public Prisma(IServiceProvider serviceProvider) {
-            this.serviceProvider = serviceProvider;
+        public Prisma(PrintlogDbContext dbContext) {
+            this.dbContext = dbContext;
+        }
+
+        public void Dispose() {
+            dbContext.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public void ReadLog(int printerId) {
-            using (var scope = serviceProvider.CreateScope()) {
-                var dbContext = scope.ServiceProvider.GetRequiredService<PrintlogDbContext>();
-                var printer = dbContext.MasterTypes.FirstOrDefault(f => f.TypeId == printerId);
-                if (printer != null) {
-                    string printerName = printer.TypeName;
-                    int cycleTime = printer.CycleTime.Value;
+            var printer = dbContext.MasterTypes.FirstOrDefault(f => f.TypeId == printerId);
+            if (printer != null) {
+                string printerName = printer.TypeName;
+                int cycleTime = printer.CycleTime.Value;
 
-                    string pathInput = Path.Combine(Configs.RootPath, @"Inbox", printerName);
-                    string pathOutputSuccess = Path.Combine(Configs.RootPath, @"Outbox\Successfully", printerName);
-                    string pathOutputFailed = Path.Combine(Configs.RootPath, @"Outbox\Failed", printerName);
+                string pathInput = Path.Combine(Configs.RootPath, @"Inbox", printerName);
+                string pathOutputSuccess = Path.Combine(Configs.RootPath, @"Outbox\Successfully", printerName);
+                string pathOutputFailed = Path.Combine(Configs.RootPath, @"Outbox\Failed", printerName);
 
-                    if (!Directory.Exists(pathOutputSuccess)) {
-                        Directory.CreateDirectory(pathOutputSuccess);
-                    }
+                if (!Directory.Exists(pathOutputSuccess)) {
+                    Directory.CreateDirectory(pathOutputSuccess);
+                }
 
-                    if (!Directory.Exists(pathOutputFailed)) {
-                        Directory.CreateDirectory(pathOutputFailed);
-                    }
+                if (!Directory.Exists(pathOutputFailed)) {
+                    Directory.CreateDirectory(pathOutputFailed);
+                }
 
-                    foreach (string file in Directory.EnumerateFiles(pathInput, "*.acc")) {
-                        DateTime dateTimeNow = DateTime.Now;
-                        #region Add ImportFile
-                        ImportFile newImport = new ImportFile() {
-                            PrinterId = printerId,
-                            FileName = Path.GetFileName(file),
-                            CountLine = 0,
-                            CountJob = 0,
-                            CountJobDetail = 0,
-                            IsSuccess = false,
-                            DateCreated = dateTimeNow,
-                        };
-                        #endregion
-                        dbContext.ImportFiles.Add(newImport);
-                        int rnt = dbContext.SaveChanges();
+                int rowCount;
+                foreach (string file in Directory.EnumerateFiles(pathInput, "*.acc")) {
+                    DateTime dateTimeNow = DateTime.Now;
+                    #region Add ImportFile
+                    ImportFile newImport = new ImportFile() {
+                        PrinterId = printerId,
+                        FileName = Path.GetFileName(file),
+                        CountLine = 0,
+                        CountJob = 0,
+                        CountJobDetail = 0,
+                        IsSuccess = false,
+                        DateCreated = dateTimeNow,
+                    };
+                    #endregion
+                    dbContext.ImportFiles.Add(newImport);
+                    int rnt = dbContext.SaveChanges();
 
-                        List<PrinterLog> LstPrinterLog = new List<PrinterLog>();
-                        List<PrinterLogDetail> LstPrinterLogDetail = new List<PrinterLogDetail>();
-                        StreamReader reader = new StreamReader(file);
-
+                    List<PrinterLog> LstPrinterLog = new List<PrinterLog>();
+                    List<PrinterLogDetail> LstPrinterLogDetail = new List<PrinterLogDetail>();
+                    using (StreamReader reader = new StreamReader(file)) {
                         try {
                             while (!reader.EndOfStream) {
                                 string line = reader.ReadLine();
@@ -81,7 +86,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
                                             DateCreated = dateTimeNow,
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
@@ -97,7 +101,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
                                             Client = value[2],
                                             Sender = value[3],
                                             TotalFile = value[4].ToInt(),
@@ -121,7 +124,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             LastRecordType = recordType,
                                         });
                                     } else {
-                                        updatePrinterLog.RawData += line;
                                         updatePrinterLog.Client = value[2];
                                         updatePrinterLog.Sender = value[3];
                                         updatePrinterLog.TotalFile = value[4].ToInt();
@@ -154,7 +156,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
                                             DateCreated = dateTimeNow,
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
@@ -170,7 +171,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 JobType = value[2],
                                                 FullPath = value[3],
                                                 JobName = Path.GetFileName(value[3]),
@@ -184,7 +184,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             });
                                             newImport.CountJobDetail++;
                                         } else {
-                                            updatePrinterLogDetail.RawData += line;
                                             updatePrinterLogDetail.JobType = value[2];
                                             updatePrinterLogDetail.FullPath = value[3];
                                             updatePrinterLogDetail.JobName = Path.GetFileName(value[3]);
@@ -207,7 +206,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
                                             UserExplorer = value[2],
                                             StatusExplorer = value[3].ToInt(),
                                             DateExplorer = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
@@ -216,7 +214,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             LastRecordType = recordType,
                                         });
                                     } else {
-                                        updatePrinterLog.RawData += line;
                                         updatePrinterLog.UserExplorer = value[2];
                                         updatePrinterLog.StatusExplorer = value[3].ToInt();
                                         updatePrinterLog.DateExplorer = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -234,7 +231,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
                                             DateCreated = dateTimeNow,
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
@@ -252,7 +248,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 Sender = value[2],
                                                 JobType = value[3],
                                                 JobName = value[4],
@@ -265,7 +260,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
                                             updatePrinterLog.Sender = value[2];
                                             updatePrinterLog.JobType = value[3];
                                             updatePrinterLog.JobName = value[4];
@@ -284,7 +278,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 Sender = value[2],
                                                 JobType = value[3],
                                                 Printer = value[5],
@@ -297,7 +290,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             });
                                             newImport.CountJob++;
                                         } else {
-                                            updatePrinterLog.RawData += line;
                                             updatePrinterLog.Sender = value[2];
                                             updatePrinterLog.JobType = value[3];
                                             updatePrinterLog.Printer = value[5];
@@ -315,7 +307,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 JobName = value[4],
                                                 Printer = value[5],
                                                 Jobqueue = value[6].ToInt(),
@@ -327,7 +318,6 @@ namespace PrintLog.Hangfire.Jobs {
                                             });
                                             newImport.CountJobDetail++;
                                         } else {
-                                            updatePrinterLogDetail.RawData += line;
                                             updatePrinterLogDetail.JobName = value[4];
                                             updatePrinterLogDetail.Printer = value[5];
                                             updatePrinterLogDetail.Jobqueue = value[6].ToInt();
@@ -349,7 +339,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 UserExplorer = value[2],
                                                 StatusExplorer = value[3].ToInt(),
                                                 Printer = value[4],
@@ -364,7 +353,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
                                             updatePrinterLog.UserExplorer = value[2];
                                             updatePrinterLog.StatusExplorer = value[3].ToInt();
                                             updatePrinterLog.Printer = value[4];
@@ -385,7 +373,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 UserExplorer = value[2],
                                                 StatusExplorer = value[3].ToInt(),
                                                 Printer = value[4],
@@ -399,7 +386,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
                                             updatePrinterLog.UserExplorer = value[2];
                                             updatePrinterLog.StatusExplorer = value[3].ToInt();
                                             updatePrinterLog.Printer = value[4];
@@ -419,7 +405,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 UserExplorer = value[2],
                                                 StatusExplorer = value[3].ToInt(),
                                                 Printer = value[4],
@@ -435,7 +420,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLogDetail.RawData += line;
+                                            
                                             updatePrinterLogDetail.UserExplorer = value[2];
                                             updatePrinterLogDetail.StatusExplorer = value[3].ToInt();
                                             updatePrinterLogDetail.Printer = value[4];
@@ -461,7 +446,7 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
+
                                             DateCreated = dateTimeNow,
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
@@ -477,7 +462,7 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
+
                                             DateCreated = dateTimeNow,
                                             ImportId = newImport.ImportId,
                                             LastRecordType = recordType,
@@ -495,7 +480,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
                                                 DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 Simplex = value[6].ToBoolean(),
@@ -515,7 +499,6 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.Simplex = value[6].ToBoolean();
@@ -541,7 +524,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 Simplex = value[6].ToBoolean(),
@@ -561,7 +544,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
+
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.Simplex = value[6].ToBoolean();
@@ -587,7 +570,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 Simplex = value[6].ToBoolean(),
@@ -607,7 +590,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLogDetail.RawData += line;
+                                            
                                             updatePrinterLogDetail.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLogDetail.DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLogDetail.Simplex = value[6].ToBoolean();
@@ -638,7 +621,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 DateCreated = dateTimeNow,
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
@@ -653,7 +636,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 DateCreated = dateTimeNow,
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
@@ -671,7 +654,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 TotalSheets = value[3].ToInt(),
                                                 WidthPage = value[4].ToInt(),
                                                 LengthPage = value[5].ToInt(),
@@ -680,7 +663,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
+
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
                                             updatePrinterLog.WidthPage = value[4].ToInt();
                                             updatePrinterLog.LengthPage = value[5].ToInt();
@@ -695,7 +678,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 TotalSheets = value[3].ToInt(),
                                                 WidthPage = value[4].ToInt(),
                                                 LengthPage = value[5].ToInt(),
@@ -704,7 +687,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
+
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
                                             updatePrinterLog.WidthPage = value[4].ToInt();
                                             updatePrinterLog.LengthPage = value[5].ToInt();
@@ -719,7 +702,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 TotalSheets = value[3].ToInt(),
                                                 WidthPage = value[4].ToInt(),
                                                 LengthPage = value[5].ToInt(),
@@ -728,7 +711,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLogDetail.RawData += line;
+                                            
                                             updatePrinterLogDetail.TotalSheets = value[3].ToInt();
                                             updatePrinterLogDetail.WidthPage = value[4].ToInt();
                                             updatePrinterLogDetail.LengthPage = value[5].ToInt();
@@ -748,14 +731,14 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 TotalSheets = value[3].ToInt(),
                                                 DateCreated = dateTimeNow,
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
+
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
                                             updatePrinterLog.LastRecordType = recordType;
                                             updatePrinterLog.DateModified = dateTimeNow;
@@ -768,14 +751,14 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 TotalSheets = value[3].ToInt(),
                                                 DateCreated = dateTimeNow,
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
+
                                             updatePrinterLog.TotalSheets = value[3].ToInt();
                                             updatePrinterLog.LastRecordType = recordType;
                                             updatePrinterLog.DateModified = dateTimeNow;
@@ -788,14 +771,14 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 TotalSheets = value[3].ToInt(),
                                                 DateCreated = dateTimeNow,
                                                 ImportId = newImport.ImportId,
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLogDetail.RawData += line;
+                                            
                                             updatePrinterLogDetail.TotalSheets = value[3].ToInt();
                                             updatePrinterLogDetail.ImportIdModified = newImport.ImportId;
                                             updatePrinterLogDetail.DateModified = dateTimeNow;
@@ -814,7 +797,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 Simplex = value[6].ToBoolean(),
@@ -826,7 +809,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
+
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.Simplex = value[6].ToBoolean();
@@ -844,7 +827,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 PrinterId = printerId,
                                                 JobId = jobId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 Simplex = value[6].ToBoolean(),
@@ -856,7 +839,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLog.RawData += line;
+
                                             updatePrinterLog.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLog.Simplex = value[6].ToBoolean();
@@ -874,7 +857,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 JobId = jobId,
                                                 FileId = fileId,
                                                 CycleTime = cycleTime,
-                                                RawData = line,
+    
                                                 DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
                                                 Simplex = value[6].ToBoolean(),
@@ -886,7 +869,7 @@ namespace PrintLog.Hangfire.Jobs {
                                                 LastRecordType = recordType,
                                             });
                                         } else {
-                                            updatePrinterLogDetail.RawData += line;
+                                            
                                             updatePrinterLogDetail.DateStart = DateTime.ParseExact(value[2] + " " + value[3], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLogDetail.DateEnd = DateTime.ParseExact(value[4] + " " + value[5], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
                                             updatePrinterLogDetail.Simplex = value[6].ToBoolean();
@@ -909,7 +892,7 @@ namespace PrintLog.Hangfire.Jobs {
                                             PrinterId = printerId,
                                             JobId = jobId,
                                             CycleTime = cycleTime,
-                                            RawData = line,
+
                                             Client = value[2],
                                             JobName = value[3],
                                             DateSubmission = DateTime.ParseExact(value[8] + " " + value[9], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN),
@@ -918,7 +901,7 @@ namespace PrintLog.Hangfire.Jobs {
                                             LastRecordType = recordType,
                                         });
                                     } else {
-                                        updatePrinterLog.RawData += line;
+
                                         updatePrinterLog.Client = value[2];
                                         updatePrinterLog.JobName = value[3];
                                         updatePrinterLog.DateSubmission = DateTime.ParseExact(value[8] + " " + value[9], "dd.MM.yyyy HH:mm:ss", CultureInfoHelper.CultureInfoEN);
@@ -929,12 +912,13 @@ namespace PrintLog.Hangfire.Jobs {
                                 #endregion
                             }
                             reader.Close();
-
-                            var printerLogs = dbContext.PrinterLogs.Where(w => w.PrinterId == printerId).ToList();
+                            rowCount = 0;
+                            var printerLogs = dbContext.PrinterLogs.AsNoTracking().Where(w => w.PrinterId == printerId).ToList();
                             foreach (var printerLog in LstPrinterLog) {
                                 var printerLogInfo = printerLogs.FirstOrDefault(f => f.JobId == printerLog.JobId && f.CycleTime == printerLog.CycleTime);
                                 if (printerLogInfo != null) {
                                     #region Update PrinterLogs
+                                    //dbContext.PrinterLogs.Attach(printerLogInfo);
                                     printerLogInfo.Client = printerLog.Client ?? printerLogInfo.Client;
                                     printerLogInfo.Sender = printerLog.Sender ?? printerLogInfo.Sender;
                                     printerLogInfo.Printer = printerLog.Printer ?? printerLogInfo.Printer;
@@ -975,10 +959,10 @@ namespace PrintLog.Hangfire.Jobs {
                                     printerLogInfo.DateEndQueue = printerLog.DateEndQueue ?? printerLogInfo.DateEndQueue;
                                     printerLogInfo.DateStart = printerLog.DateStart ?? printerLogInfo.DateStart;
                                     printerLogInfo.DateEnd = printerLog.DateEnd ?? printerLogInfo.DateEnd;
-                                    printerLogInfo.RawData += printerLog.RawData;
                                     printerLogInfo.ImportIdModified = printerLog.ImportIdModified;
                                     printerLogInfo.DateModified = printerLog.DateModified;
                                     printerLogInfo.LastRecordType = printerLog.LastRecordType;
+                                    dbContext.Entry(printerLogInfo).State = EntityState.Modified;
                                     #endregion
                                 } else {
                                     #region Add PrinterLogs
@@ -986,13 +970,21 @@ namespace PrintLog.Hangfire.Jobs {
                                     newImport.CountJob++;
                                     #endregion
                                 }
+                                rowCount++;
+                                if (rowCount % BatchSize == 0) {
+                                    var rowAffeced = dbContext.SaveChanges();
+                                }
                             }
+                            printerLogs.Clear();
+                            printerLogs.TrimExcess();
 
-                            var printerLogDetails = dbContext.PrinterLogDetails.Where(w => w.PrinterId == printerId).ToList();
+                            var printerLogDetails = dbContext.PrinterLogDetails.AsNoTracking().Where(w => w.PrinterId == printerId).ToList();
+                            rowCount = 0;
                             foreach (var printerLogDetail in LstPrinterLogDetail) {
                                 var printerLogDetailInfo = printerLogDetails.FirstOrDefault(f => f.JobId == printerLogDetail.JobId && f.CycleTime == printerLogDetail.CycleTime && f.FileId == printerLogDetail.FileId);
                                 if (printerLogDetailInfo != null) {
                                     #region Update PrinterLogDetails
+                                    //dbContext.PrinterLogDetails.Attach(printerLogDetailInfo);
                                     printerLogDetailInfo.JobType = printerLogDetail.JobType ?? printerLogDetailInfo.JobType;
                                     printerLogDetailInfo.FullPath = printerLogDetail.FullPath ?? printerLogDetailInfo.FullPath;
                                     printerLogDetailInfo.JobName = printerLogDetail.JobName ?? printerLogDetailInfo.JobName;
@@ -1025,10 +1017,10 @@ namespace PrintLog.Hangfire.Jobs {
                                     printerLogDetailInfo.DateEndQueue = printerLogDetail.DateEndQueue ?? printerLogDetailInfo.DateEndQueue;
                                     printerLogDetailInfo.DateStart = printerLogDetail.DateStart ?? printerLogDetailInfo.DateStart;
                                     printerLogDetailInfo.DateEnd = printerLogDetail.DateEnd ?? printerLogDetailInfo.DateEnd;
-                                    printerLogDetailInfo.RawData += printerLogDetail.RawData;
                                     printerLogDetailInfo.ImportIdModified = printerLogDetail.ImportIdModified;
                                     printerLogDetailInfo.DateModified = printerLogDetail.DateModified;
                                     printerLogDetailInfo.LastRecordType = printerLogDetail.LastRecordType;
+                                    dbContext.Entry(printerLogDetailInfo).State = EntityState.Modified;
                                     #endregion
                                 } else {
                                     #region Add PrinterLogDetails
@@ -1036,12 +1028,19 @@ namespace PrintLog.Hangfire.Jobs {
                                     newImport.CountJobDetail++;
                                     #endregion
                                 }
+                                rowCount++;
+                                if (rowCount % BatchSize == 0) {
+                                    var rowAffeced = dbContext.SaveChanges();
+                                }
                             }
+                            printerLogDetails.Clear();
+                            printerLogDetails.TrimExcess();
 
                             printer.CycleTime = cycleTime;
                             newImport.IsSuccess = true;
 
                             dbContext.SaveChanges();
+                            dbContext.Dispose();
 
                             #region Move Input File to Success
                             string pathSuccess = Path.Combine(pathOutputSuccess, Path.GetFileName(file));
@@ -1054,6 +1053,7 @@ namespace PrintLog.Hangfire.Jobs {
                             File.Delete(file);
                             #endregion
                         } catch (Exception ex) {
+                            dbContext.Dispose();
                             reader.Close();
                             ex.ToExceptionless().AddObject(printerId, "printerId").AddObject(file, "file").AddObject(newImport, "newImport").Submit();
 
