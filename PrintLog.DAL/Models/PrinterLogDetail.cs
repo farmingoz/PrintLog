@@ -53,15 +53,15 @@ namespace PrintLog.DAL.Models
         public string UserExplorer { get; set; }
         /// <summary>
         /// [1012.End-status | 1031.End-status | 1040.Endstatus] 0 : printed successfully,
-1 : printed successfully and kept with status “locked”,
-2 : deleted by the operator (not supported since V4.04),
-3 : deleted automatically (not supported since V4.04),
-4 : reset active printer,
-5 : PS Abend,
-6 : Job was interrupted after &quot;interrupt job&quot; request.,
-7 : Job was aborted because of bad print data or resources,
-8 : cancel+hold,
-9 : cancel+delete
+        ///                                                      1 : printed successfully and kept with status “locked”,
+        ///                                                      2 : deleted by the operator (not supported since V4.04),
+        ///                                                      3 : deleted automatically (not supported since V4.04),
+        ///                                                      4 : reset active printer,
+        ///                                                      5 : PS Abend,
+        ///                                                      6 : Job was interrupted after &quot;interrupt job&quot; request.,
+        ///                                                      7 : Job was aborted because of bad print data or resources,
+        ///                                                      8 : cancel+hold,
+        ///                                                      9 : cancel+delete
         /// </summary>
         public int? StatusExplorer { get; set; }
         /// <summary>
@@ -174,34 +174,34 @@ namespace PrintLog.DAL.Models
         public DateTime? DateModified { get; set; }
         /// <summary>
         /// record type
-1000 : Input-Filter,
-1010 : Print Job Manager Job-Id,
-1011 : Print Job Manager Sud-Id,
-1012 : ODS,
-1020 : UI-Manager,
-1030 : Spool recheck information,
-1031 : Spool after printed,
-1032 : Spool after printed พร้อม 1031,
-1040 : Information actually printed,
-1041 : Information input and output bins,
-1042 : Detailed information input bins,
-1043 : Detailed information output bins,
-1052 : PJL/PCL Driver,
-1110 : Host Download,
-1120 : LP,
-1130 : HotDir,
-1200 : LCDS report information,
-1201 : Additional report information,
-1202 : Additional job information,
-1210 : LCDS-Driver,
-1600 : FTP-Driver - after job finished,
-1601 : 
-1602 : 
-1603 : 
-1620 : Postscript Driver - Job Id,
-1621 : Postscript Driver - Sub Id,
-2010 : job ticket information,
-99xx : User-specific Extensions
+        /// 1000 : Input-Filter,
+        /// 1010 : Print Job Manager Job-Id,
+        /// 1011 : Print Job Manager Sud-Id,
+        /// 1012 : ODS,
+        /// 1020 : UI-Manager,
+        /// 1030 : Spool recheck information,
+        /// 1031 : Spool after printed,
+        /// 1032 : Spool after printed พร้อม 1031,
+        /// 1040 : Information actually printed,
+        /// 1041 : Information input and output bins,
+        /// 1042 : Detailed information input bins,
+        /// 1043 : Detailed information output bins,
+        /// 1052 : PJL/PCL Driver,
+        /// 1110 : Host Download,
+        /// 1120 : LP,
+        /// 1130 : HotDir,
+        /// 1200 : LCDS report information,
+        /// 1201 : Additional report information,
+        /// 1202 : Additional job information,
+        /// 1210 : LCDS-Driver,
+        /// 1600 : FTP-Driver - after job finished,
+        /// 1601 : 
+        /// 1602 : 
+        /// 1603 : 
+        /// 1620 : Postscript Driver - Job Id,
+        /// 1621 : Postscript Driver - Sub Id,
+        /// 2010 : job ticket information,
+        /// 99xx : User-specific Extensions
         /// </summary>
         public int LastRecordType { get; set; }
     }

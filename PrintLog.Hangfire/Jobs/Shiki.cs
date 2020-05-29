@@ -11,21 +11,16 @@ using System.Threading.Tasks;
 using TKSLibrary;
 
 namespace PrintLog.Hangfire.Jobs {
-    public class Shiki : IDisposable {
-        private readonly PrintlogDbContext dbContext;
+    public class Shiki {
+        private readonly IServiceScopeFactory serviceScopeFactory;
 
-        public Shiki(PrintlogDbContext dbContext) {
-            this.dbContext = dbContext;
-        }
-
-        public void Dispose() {
-            dbContext.Dispose();
-            GC.SuppressFinalize(this);
+        public Shiki(IServiceScopeFactory serviceScopeFactory) {
+            this.serviceScopeFactory = serviceScopeFactory;
         }
 
         public void ReadLog(int printerId) {
             //try {
-            //    using (var scope = serviceProvider.CreateScope()) {
+            //    using (var scope = serviceScopeFactory.CreateScope()) {
             //        var dbContext = scope.ServiceProvider.GetRequiredService<PrintlogDbContext>();
             //        var printer = dbContext.MasterTypes.FirstOrDefault(f => f.TypeId == printerId);
             //        if (printer != null) {
@@ -91,7 +86,7 @@ namespace PrintLog.Hangfire.Jobs {
             //                                    RawData = line,
             //                                    DateCreated = dateTimeNow,
             //                                };
-                                            
+
             //                                newMachineLogs.Add(newMachineLog);
             //                                newImport.CountJob++;
             //                            }
@@ -111,7 +106,7 @@ namespace PrintLog.Hangfire.Jobs {
             //                                    RawData = line,
             //                                    DateCreated = dateTimeNow,
             //                                };
-                                            
+
             //                                newMachineLogDetails.Add(newDetail);
             //                            }
             //                        }
