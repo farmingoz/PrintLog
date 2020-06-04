@@ -18,12 +18,15 @@ service:
   type: ClusterIP
   port: 80
 
+deployment:
+  containerPort: 80
+
 probes:
   enabled: false
 
 ingress:
   enabled: false
-  annotations:
+  annotations: {}
     # kubernetes.io/tls-acme: "true"
   path: /
   # hosts:
