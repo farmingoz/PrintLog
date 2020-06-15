@@ -6,29 +6,9 @@ namespace PrintLog.DAL.Models
 {
     public partial class MasterType
     {
-        public MasterType()
-        {
-            ImportFiles = new HashSet<ImportFile>();
-        }
-
-        /// <summary>
-        /// รหัสประเภท
-        /// </summary>
         public int TypeId { get; set; }
-        /// <summary>
-        /// รหัสประเภทก่อนหน้า
-        /// </summary>
         public int? ParentTypeId { get; set; }
-        /// <summary>
-        /// ชื่อประเภท
-        /// </summary>
         public string TypeName { get; set; }
-        /// <summary>
-        /// รหัสอ้างอิง
-        /// </summary>
-        public int? RefNo { get; set; }
         public int? CycleTime { get; set; }
-
-        public virtual ICollection<ImportFile> ImportFiles { get; set; }
     }
 }

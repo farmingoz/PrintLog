@@ -4,21 +4,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using PrintLog.DAL.Models;
-using System.Threading.Tasks;
 
 namespace PrintLog.DAL.Data
 {
     public partial class PrintlogDbContext : DbContext
     {
-        public override void Dispose() {
-            base.Dispose();
-            GC.SuppressFinalize(this);
-        }
-
-        public override ValueTask DisposeAsync() {
-            return base.DisposeAsync();
-        }
-
         public PrintlogDbContext()
         {
         }
@@ -32,413 +22,118 @@ namespace PrintLog.DAL.Data
         public virtual DbSet<MasterType> MasterTypes { get; set; }
         public virtual DbSet<PrinterLog> PrinterLogs { get; set; }
         public virtual DbSet<PrinterLogDetail> PrinterLogDetails { get; set; }
-        public virtual DbSet<RecordType> RecordTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ImportFile>(entity =>
             {
-                entity.HasKey(e => e.ImportId);
-
-                entity.Property(e => e.ImportId).HasComment("เลขที่การนำเข้าข้อมูล");
-
-                entity.Property(e => e.CountJob).HasComment("จำนวนงานที่นำเข้า");
-
-                entity.Property(e => e.CountJobDetail).HasComment("จำนวนรายละเอียดงานที่นำเข้า");
-
-                entity.Property(e => e.CountLine).HasComment("จำนวนบรรทัดของไฟล์ที่นำเข้า");
+                entity.HasKey(e => e.ImportId)
+                    .HasName("PK_Imports");
 
                 entity.Property(e => e.DateCreated)
                     .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่ทำการนำเข้า");
+                    .HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.FileName)
                     .IsRequired()
-                    .HasMaxLength(200)
-                    .HasComment("ชื่อไฟล์ที่นำเข้า");
-
-                entity.Property(e => e.IsSuccess).HasComment("นำเข้าไฟล์สำเร็จ?");
-
-                entity.Property(e => e.PrinterId).HasComment("เลขที่เครื่องพิมพ์");
-
-                entity.HasOne(d => d.Printer)
-                    .WithMany(p => p.ImportFiles)
-                    .HasForeignKey(d => d.PrinterId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ImportFiles_MasterTypes");
+                    .HasMaxLength(50);
             });
 
             modelBuilder.Entity<MasterType>(entity =>
             {
                 entity.HasKey(e => e.TypeId);
 
-                entity.Property(e => e.TypeId)
-                    .HasComment("รหัสประเภท")
-                    .ValueGeneratedNever();
-
-                entity.Property(e => e.ParentTypeId).HasComment("รหัสประเภทก่อนหน้า");
-
-                entity.Property(e => e.RefNo).HasComment("รหัสอ้างอิง");
+                entity.Property(e => e.TypeId).ValueGeneratedNever();
 
                 entity.Property(e => e.TypeName)
                     .IsRequired()
-                    .HasMaxLength(256)
-                    .HasComment("ชื่อประเภท");
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<PrinterLog>(entity =>
             {
-                entity.HasKey(e => new { e.PrinterId, e.JobId, e.CycleTime })
-                    .HasName("PK_MachineLogs");
+                entity.HasKey(e => new { e.PrinterId, e.JobId, e.CycleTime });
 
-                entity.Property(e => e.PrinterId).HasComment("เลขที่เครื่องพิมพ์");
+                entity.Property(e => e.JobId).HasMaxLength(128);
 
-                entity.Property(e => e.JobId)
-                    .HasMaxLength(256)
-                    .HasComment("[All.JobId] เลขที่งานพิมพ์จากเครื่องพิมพ์");
+                entity.Property(e => e.Client).HasMaxLength(256);
 
-                entity.Property(e => e.BackPages).HasComment("[1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง");
+                entity.Property(e => e.ColorIds).HasMaxLength(256);
 
-                entity.Property(e => e.Client)
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Client | 1130.Client] host name หรือ IP address ที่วางงาน");
+                entity.Property(e => e.CustAcc).HasMaxLength(256);
 
-                entity.Property(e => e.ColorIds)
-                    .HasColumnName("Color_Ids")
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Color_Ids] Comma separated list of color-ids");
+                entity.Property(e => e.DateCreated).HasColumnType("datetime");
 
-                entity.Property(e => e.CustAcc)
-                    .HasColumnName("Cust_acc")
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Cust_acc] รหัสลูกค้า");
+                entity.Property(e => e.DateEnd).HasColumnType("datetime");
 
-                entity.Property(e => e.DateCreated)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่ทำการนำเข้า");
+                entity.Property(e => e.DateEndQueue).HasColumnType("datetime");
 
-                entity.Property(e => e.DateEnd)
-                    .HasColumnType("datetime")
-                    .HasComment("[1040.Enddate + 1040.Endtime] วันเวลาที่พิมพ์เสร็จ");
+                entity.Property(e => e.DateExplorer).HasColumnType("datetime");
 
-                entity.Property(e => e.DateEndQueue)
-                    .HasColumnType("datetime")
-                    .HasComment("[1031.Enddate + 1031.Endtime] วันเวลาที่ออกจากคิว");
+                entity.Property(e => e.DateModified).HasColumnType("datetime");
 
-                entity.Property(e => e.DateExplorer)
-                    .HasColumnType("datetime")
-                    .HasComment("[1012.Date + 1012.Time] วันเวลาที่นำออกจากระบบ");
+                entity.Property(e => e.DateStart).HasColumnType("datetime");
 
-                entity.Property(e => e.DateModified)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่แก้ไขข้อมูล");
+                entity.Property(e => e.DateStartQueue).HasColumnType("datetime");
 
-                entity.Property(e => e.DateStart)
-                    .HasColumnType("datetime")
-                    .HasComment("[1040.Startdate + 1040.Starttime] วันเวลาที่เริ่มพิมพ์");
+                entity.Property(e => e.DateSubmission).HasColumnType("datetime");
 
-                entity.Property(e => e.DateStartQueue)
-                    .HasColumnType("datetime")
-                    .HasComment("[1031.Startdate + 1031.Starttime] วันเวลาที่เริ่มเข้าคิว");
+                entity.Property(e => e.Form).HasMaxLength(256);
 
-                entity.Property(e => e.DateSubmission)
-                    .HasColumnType("datetime")
-                    .HasComment("[1010.Date + 1010.Time | 1030.Date + 1030.Time] วันเวลาส่งข้อมูลเข้าระบบ");
+                entity.Property(e => e.JobName).HasMaxLength(256);
 
-                entity.Property(e => e.Duplex).HasComment("[1040.Duplex] duplex mode 0 : no, 1 : yes");
+                entity.Property(e => e.JobType).HasMaxLength(256);
 
-                entity.Property(e => e.Feet).HasComment("[1040.Feet] จำนวนความยาวของกระดาษ หน่วยเป็นฟุต");
+                entity.Property(e => e.OrderId).HasMaxLength(256);
 
-                entity.Property(e => e.Form)
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Form | 1031.Form] Content of the FORM parameter (not used = empty)");
+                entity.Property(e => e.Printer).HasMaxLength(256);
 
-                entity.Property(e => e.FrontPages).HasComment("[1040.FPages] จำนวนหน้าที่พิมพ์ด้านหน้า");
+                entity.Property(e => e.Range).HasMaxLength(256);
 
-                entity.Property(e => e.ImportId).HasComment("เลขที่การนำเข้าข้อมูล");
+                entity.Property(e => e.ReferenceId).HasMaxLength(256);
 
-                entity.Property(e => e.ImportIdModified).HasComment("เลขที่การแก้ไขข้อมูล");
+                entity.Property(e => e.Sender).HasMaxLength(256);
 
-                entity.Property(e => e.InformationPages).HasComment("[1040.IPages] จำนวนหน้าของใบปะหน้า");
+                entity.Property(e => e.TicketName).HasMaxLength(256);
 
-                entity.Property(e => e.InformationSheets).HasComment("[1040.ISheets] จำนวนกระดาษของใบปะหน้า");
-
-                entity.Property(e => e.JobName)
-                    .HasMaxLength(512)
-                    .HasComment("[1010.Job-Name | 1030.Jobname | 1031.Jobname] Name of the job");
-
-                entity.Property(e => e.JobType)
-                    .HasMaxLength(128)
-                    .HasComment("[1030.Filetype] ประเภทไฟล์พิมพ์");
-
-                entity.Property(e => e.Jobqueue).HasComment("[1010.Jobqueue | 1030.Jobqueue | 1031.Jobqueue]");
-
-                entity.Property(e => e.LastRecordType).HasComment(@"record type
-1000 : Input-Filter,
-1010 : Print Job Manager Job-Id,
-1011 : Print Job Manager Sud-Id,
-1012 : ODS,
-1020 : UI-Manager,
-1030 : Spool recheck information,
-1031 : Spool after printed,
-1032 : Spool after printed พร้อม 1031,
-1040 : Information actually printed,
-1041 : Information input and output bins,
-1042 : Detailed information input bins,
-1043 : Detailed information output bins,
-1052 : PJL/PCL Driver,
-1110 : Host Download,
-1120 : LP,
-1130 : HotDir,
-1200 : LCDS report information,
-1201 : Additional report information,
-1202 : Additional job information,
-1210 : LCDS-Driver,
-1600 : FTP-Driver - after job finished,
-1601 : 
-1602 : 
-1603 : 
-1620 : Postscript Driver - Job Id,
-1621 : Postscript Driver - Sub Id,
-2010 : job ticket information,
-99xx : User-specific Extensions");
-
-                entity.Property(e => e.LengthPage).HasComment("[1042.Slen] Length of page (1/6 inch)");
-
-                entity.Property(e => e.Nup).HasComment("[1040.Nup] N-Up status: 0=unused, 1=N-Up, 2=X-2up");
-
-                entity.Property(e => e.OrderId)
-                    .HasColumnName("Order_Id")
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Order_Id] Job order id");
-
-                entity.Property(e => e.OriginalPages).HasComment("[1040.OPages] จำนวนหน้างานต้นฉบับ");
-
-                entity.Property(e => e.Printer)
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Printer | 1030.Printer | 1031.Printer] ชื่อเครื่องพิมพ์ในระบบ");
-
-                entity.Property(e => e.Proofprint).HasComment("[1010.Proofprint] Yes/No");
-
-                entity.Property(e => e.Range)
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Range | 1031.Range] หน้าที่ต้องการพิมพ์");
-
-                entity.Property(e => e.ReferenceId)
-                    .HasColumnName("Reference_Id")
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Reference_Id] Reference-id of a parent job");
-
-                entity.Property(e => e.Resolution).HasComment("[1010.Resolution | 1030.Resolution] ค่าความระเอียดของการพิมพ์ หรือ Dpi (240, 300, 600)");
-
-                entity.Property(e => e.Sender)
-                    .HasMaxLength(512)
-                    .HasComment("[1010.User | 1030.User name] ชื่อคน หรือ ชื่อเครื่องสั่งพิมพ์");
-
-                entity.Property(e => e.Simplex).HasComment("[1040.Simplex] simplex mode 0 : no, 1 : yes");
-
-                entity.Property(e => e.StatusExplorer).HasComment(@"[1012.End-status | 1031.End-status | 1040.Endstatus] 0 : printed successfully,
-1 : printed successfully and kept with status “locked”,
-2 : deleted by the operator (not supported since V4.04),
-3 : deleted automatically (not supported since V4.04),
-4 : reset active printer,
-5 : PS Abend,
-6 : Job was interrupted after ""interrupt job"" request.,
-7 : Job was aborted because of bad print data or resources,
-8 : cancel+hold,
-9 : cancel+delete");
-
-                entity.Property(e => e.Storeprint).HasComment("[1010.Storeprint] Yes/No");
-
-                entity.Property(e => e.TicketName)
-                    .HasMaxLength(256)
-                    .HasComment("[1010.Ticket-Name] File name of the job ticket");
-
-                entity.Property(e => e.TotalFile).HasComment("[Count(1011)] จำนวนไฟล์");
-
-                entity.Property(e => e.TotalOffsets).HasComment("[1040.Offsets] จำนวนหน้าของการพิมพ์ Offsets");
-
-                entity.Property(e => e.TotalPage).HasComment("[1040.Pages] จำนวนหน้างานพิมพ์");
-
-                entity.Property(e => e.TotalSheets).HasComment("[1040.Sheets] จำนวนกระดาษที่พิมพ์");
-
-                entity.Property(e => e.TrackingEnabled)
-                    .HasColumnName("Tracking_Enabled")
-                    .HasComment("[1010.Tracking_Enabled] Info if a job is tracked");
-
-                entity.Property(e => e.UserExplorer)
-                    .HasMaxLength(512)
-                    .HasComment("[1012.User name | 1031.User name] User ที่นำออก");
-
-                entity.Property(e => e.WidthPage).HasComment("[1042.Swid] Width of page (1/6 inch)");
+                entity.Property(e => e.UserExplorer).HasMaxLength(256);
             });
 
             modelBuilder.Entity<PrinterLogDetail>(entity =>
             {
-                entity.HasKey(e => new { e.PrinterId, e.JobId, e.CycleTime, e.FileId })
-                    .HasName("PK_MachineLogDetails");
+                entity.HasKey(e => new { e.PrinterId, e.JobId, e.CycleTime, e.FileId });
 
-                entity.Property(e => e.PrinterId).HasComment("เลขที่เครื่องพิมพ์");
+                entity.Property(e => e.JobId).HasMaxLength(256);
 
-                entity.Property(e => e.JobId)
-                    .HasMaxLength(256)
-                    .HasComment("[1011.JobId | 1030.JobId] เลขที่งานพิมพ์จากเครื่องพิมพ์");
+                entity.Property(e => e.DateCreated).HasColumnType("datetime");
 
-                entity.Property(e => e.FileId).HasComment("[1011.SubId | 1030.SubId] เลขที่ไฟล์");
+                entity.Property(e => e.DateEnd).HasColumnType("datetime");
 
-                entity.Property(e => e.BackPages).HasComment("[1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง");
+                entity.Property(e => e.DateEndQueue).HasColumnType("datetime");
 
-                entity.Property(e => e.Copies).HasComment("[1011.Copies | 1031.Filecopies] File copies");
+                entity.Property(e => e.DateModified).HasColumnType("datetime");
 
-                entity.Property(e => e.DateCreated)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่ทำการนำเข้า");
+                entity.Property(e => e.DateStart).HasColumnType("datetime");
 
-                entity.Property(e => e.DateEnd)
-                    .HasColumnType("datetime")
-                    .HasComment("[1040.Enddate + 1040.Endtime] วันเวลาที่พิมพ์เสร็จ");
+                entity.Property(e => e.DateStartQueue).HasColumnType("datetime");
 
-                entity.Property(e => e.DateEndQueue)
-                    .HasColumnType("datetime")
-                    .HasComment("[1031.Enddate + 1031.Endtime] วันเวลาที่ออกจากคิว");
+                entity.Property(e => e.DateSubmission).HasColumnType("datetime");
 
-                entity.Property(e => e.DateModified)
-                    .HasColumnType("datetime")
-                    .HasComment("วันเวลาที่แก้ไขข้อมูล");
+                entity.Property(e => e.Form).HasMaxLength(256);
 
-                entity.Property(e => e.DateStart)
-                    .HasColumnType("datetime")
-                    .HasComment("[1040.Startdate + 1040.Starttime] วันเวลาที่เริ่มพิมพ์");
+                entity.Property(e => e.Formdef).HasMaxLength(256);
 
-                entity.Property(e => e.DateStartQueue)
-                    .HasColumnType("datetime")
-                    .HasComment("[1031.Startdate + 1031.Starttime] วันเวลาที่เริ่มเข้าคิว");
+                entity.Property(e => e.JobName).HasMaxLength(256);
 
-                entity.Property(e => e.DateSubmission)
-                    .HasColumnType("datetime")
-                    .HasComment("[1030.Date + 1030.Time] วันเวลาส่งข้อมูลเข้าระบบ");
+                entity.Property(e => e.JobType).HasMaxLength(256);
 
-                entity.Property(e => e.Duplex).HasComment("[1040.Duplex] duplex mode 0 : no, 1 : yes");
+                entity.Property(e => e.Pagedef).HasMaxLength(256);
 
-                entity.Property(e => e.Feet).HasComment("[1040.Feet] จำนวนความยาวของกระดาษ หน่วยเป็นฟุต");
+                entity.Property(e => e.Printer).HasMaxLength(256);
 
-                entity.Property(e => e.Filesize).HasComment("[1011.Filesize] File size value in bytes or 0 if unknown");
+                entity.Property(e => e.Range).HasMaxLength(256);
 
-                entity.Property(e => e.Form)
-                    .HasMaxLength(256)
-                    .HasComment("[1031.Form] Content of the FORM parameter (not used = empty)");
-
-                entity.Property(e => e.Formdef)
-                    .HasMaxLength(256)
-                    .HasComment("[1011.Formdef] FORMDEF value");
-
-                entity.Property(e => e.FrontPages).HasComment("[1040.FPages] จำนวนหน้าที่พิมพ์ด้านหน้า");
-
-                entity.Property(e => e.FullPath).HasComment("[1011.Filename] Path เต็ม");
-
-                entity.Property(e => e.ImportId).HasComment("เลขที่การนำเข้าข้อมูล");
-
-                entity.Property(e => e.ImportIdModified).HasComment("เลขที่การแก้ไขข้อมูล");
-
-                entity.Property(e => e.InformationPages).HasComment("[1040.IPages] จำนวนหน้าของใบปะหน้า");
-
-                entity.Property(e => e.InformationSheets).HasComment("[1040.ISheets] จำนวนกระดาษของใบปะหน้า");
-
-                entity.Property(e => e.JobName)
-                    .HasMaxLength(512)
-                    .HasComment("[1011.Filename | 1030.Filename | 1031.Filename] ชื่องาน");
-
-                entity.Property(e => e.JobType)
-                    .HasMaxLength(128)
-                    .HasComment("[1011.Filetype | 1030.Filetype] ประเภทไฟล์พิมพ์");
-
-                entity.Property(e => e.Jobqueue).HasComment("[1031.Jobqueue]");
-
-                entity.Property(e => e.LastRecordType).HasComment(@"record type
-1000 : Input-Filter,
-1010 : Print Job Manager Job-Id,
-1011 : Print Job Manager Sud-Id,
-1012 : ODS,
-1020 : UI-Manager,
-1030 : Spool recheck information,
-1031 : Spool after printed,
-1032 : Spool after printed พร้อม 1031,
-1040 : Information actually printed,
-1041 : Information input and output bins,
-1042 : Detailed information input bins,
-1043 : Detailed information output bins,
-1052 : PJL/PCL Driver,
-1110 : Host Download,
-1120 : LP,
-1130 : HotDir,
-1200 : LCDS report information,
-1201 : Additional report information,
-1202 : Additional job information,
-1210 : LCDS-Driver,
-1600 : FTP-Driver - after job finished,
-1601 : 
-1602 : 
-1603 : 
-1620 : Postscript Driver - Job Id,
-1621 : Postscript Driver - Sub Id,
-2010 : job ticket information,
-99xx : User-specific Extensions");
-
-                entity.Property(e => e.LengthPage).HasComment("[1042.Slen] Length of page (1/6 inch)");
-
-                entity.Property(e => e.Nup).HasComment("[1040.Nup] N-Up status: 0=unused, 1=N-Up, 2=X-2up");
-
-                entity.Property(e => e.OriginalPages).HasComment("[1040.OPages] จำนวนหน้างานต้นฉบับ");
-
-                entity.Property(e => e.Pagedef)
-                    .HasMaxLength(256)
-                    .HasComment("[1011.Pagedef] PAGEDEF value");
-
-                entity.Property(e => e.Printer)
-                    .HasMaxLength(256)
-                    .HasComment("[1031.Printer] ชื่อเครื่องพิมพ์ในระบบ");
-
-                entity.Property(e => e.Range)
-                    .HasMaxLength(256)
-                    .HasComment("[1031.Range] หน้าที่ต้องการพิมพ์");
-
-                entity.Property(e => e.Simplex).HasComment("[1040.Simplex] simplex mode 0 : no, 1 : yes");
-
-                entity.Property(e => e.StatusExplorer).HasComment(@"[1012.End-status | 1031.End-status | 1040.Endstatus] 0 : printed successfully,
-1 : printed successfully and kept with status “locked”,
-2 : deleted by the operator (not supported since V4.04),
-3 : deleted automatically (not supported since V4.04),
-4 : reset active printer,
-5 : PS Abend,
-6 : Job was interrupted after ""interrupt job"" request.,
-7 : Job was aborted because of bad print data or resources,
-8 : cancel+hold,
-9 : cancel+delete");
-
-                entity.Property(e => e.TotalOffsets).HasComment("[1040.Offsets] จำนวนหน้าของการพิมพ์ Offsets");
-
-                entity.Property(e => e.TotalPage).HasComment("[1040.Pages] จำนวนหน้างานพิมพ์");
-
-                entity.Property(e => e.TotalSheets).HasComment("[1040.Sheets] จำนวนกระดาษที่พิมพ์");
-
-                entity.Property(e => e.UserExplorer)
-                    .HasMaxLength(512)
-                    .HasComment("[1012.User name | 1031.User name] User ที่นำออก");
-
-                entity.Property(e => e.WidthPage).HasComment("[1042.Swid] Width of page (1/6 inch)");
-            });
-
-            modelBuilder.Entity<RecordType>(entity =>
-            {
-                entity.HasKey(e => e.RecordType1);
-
-                entity.Property(e => e.RecordType1)
-                    .HasColumnName("RecordType")
-                    .ValueGeneratedNever();
-
-                entity.Property(e => e.Description).HasMaxLength(1000);
-
-                entity.Property(e => e.Name).HasMaxLength(100);
+                entity.Property(e => e.UserExplorer).HasMaxLength(256);
             });
 
             OnModelCreatingPartial(modelBuilder);

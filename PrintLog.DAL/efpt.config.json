@@ -27,10 +27,6 @@
       {
          "HasPrimaryKey": true,
          "Name": "[dbo].[PrinterLogs]"
-      },
-      {
-         "HasPrimaryKey": true,
-         "Name": "[dbo].[RecordTypes]"
       }
    ],
    "UseDatabaseNames": false,

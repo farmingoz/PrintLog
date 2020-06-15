@@ -6,40 +6,14 @@ namespace PrintLog.DAL.Models
 {
     public partial class ImportFile
     {
-        /// <summary>
-        /// เลขที่การนำเข้าข้อมูล
-        /// </summary>
         public int ImportId { get; set; }
-        /// <summary>
-        /// ชื่อไฟล์ที่นำเข้า
-        /// </summary>
         public string FileName { get; set; }
-        /// <summary>
-        /// จำนวนบรรทัดของไฟล์ที่นำเข้า
-        /// </summary>
         public int CountLine { get; set; }
-        /// <summary>
-        /// จำนวนงานที่นำเข้า
-        /// </summary>
         public int CountJob { get; set; }
-        /// <summary>
-        /// จำนวนรายละเอียดงานที่นำเข้า
-        /// </summary>
         public int CountJobDetail { get; set; }
-        /// <summary>
-        /// นำเข้าไฟล์สำเร็จ?
-        /// </summary>
         public bool IsSuccess { get; set; }
-        /// <summary>
-        /// เลขที่เครื่องพิมพ์
-        /// </summary>
         public int PrinterId { get; set; }
-        /// <summary>
-        /// วันเวลาที่ทำการนำเข้า
-        /// </summary>
         public DateTime DateCreated { get; set; }
         public string ErrorMessage { get; set; }
-
-        public virtual MasterType Printer { get; set; }
     }
 }

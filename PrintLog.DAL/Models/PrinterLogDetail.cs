@@ -6,203 +6,46 @@ namespace PrintLog.DAL.Models
 {
     public partial class PrinterLogDetail
     {
-        /// <summary>
-        /// เลขที่เครื่องพิมพ์
-        /// </summary>
         public int PrinterId { get; set; }
-        /// <summary>
-        /// [1011.JobId | 1030.JobId] เลขที่งานพิมพ์จากเครื่องพิมพ์
-        /// </summary>
         public string JobId { get; set; }
         public int CycleTime { get; set; }
-        /// <summary>
-        /// [1011.SubId | 1030.SubId] เลขที่ไฟล์
-        /// </summary>
         public int FileId { get; set; }
-        /// <summary>
-        /// [1011.Filetype | 1030.Filetype] ประเภทไฟล์พิมพ์
-        /// </summary>
         public string JobType { get; set; }
-        /// <summary>
-        /// [1011.Filename] Path เต็ม
-        /// </summary>
         public string FullPath { get; set; }
-        /// <summary>
-        /// [1011.Filename | 1030.Filename | 1031.Filename] ชื่องาน
-        /// </summary>
         public string JobName { get; set; }
-        /// <summary>
-        /// [1011.Filesize] File size value in bytes or 0 if unknown
-        /// </summary>
         public long? Filesize { get; set; }
-        /// <summary>
-        /// [1011.Copies | 1031.Filecopies] File copies
-        /// </summary>
         public int? Copies { get; set; }
-        /// <summary>
-        /// [1011.Formdef] FORMDEF value
-        /// </summary>
         public string Formdef { get; set; }
-        /// <summary>
-        /// [1011.Pagedef] PAGEDEF value
-        /// </summary>
         public string Pagedef { get; set; }
-        /// <summary>
-        /// [1012.User name | 1031.User name] User ที่นำออก
-        /// </summary>
         public string UserExplorer { get; set; }
-        /// <summary>
-        /// [1012.End-status | 1031.End-status | 1040.Endstatus] 0 : printed successfully,
-        ///                                                      1 : printed successfully and kept with status “locked”,
-        ///                                                      2 : deleted by the operator (not supported since V4.04),
-        ///                                                      3 : deleted automatically (not supported since V4.04),
-        ///                                                      4 : reset active printer,
-        ///                                                      5 : PS Abend,
-        ///                                                      6 : Job was interrupted after &quot;interrupt job&quot; request.,
-        ///                                                      7 : Job was aborted because of bad print data or resources,
-        ///                                                      8 : cancel+hold,
-        ///                                                      9 : cancel+delete
-        /// </summary>
         public int? StatusExplorer { get; set; }
-        /// <summary>
-        /// [1031.Printer] ชื่อเครื่องพิมพ์ในระบบ
-        /// </summary>
         public string Printer { get; set; }
-        /// <summary>
-        /// [1031.Jobqueue]
-        /// </summary>
         public int? Jobqueue { get; set; }
-        /// <summary>
-        /// [1031.Range] หน้าที่ต้องการพิมพ์
-        /// </summary>
         public string Range { get; set; }
-        /// <summary>
-        /// [1031.Form] Content of the FORM parameter (not used = empty)
-        /// </summary>
         public string Form { get; set; }
-        /// <summary>
-        /// [1040.Simplex] simplex mode 0 : no, 1 : yes
-        /// </summary>
         public bool? Simplex { get; set; }
-        /// <summary>
-        /// [1040.Duplex] duplex mode 0 : no, 1 : yes
-        /// </summary>
         public bool? Duplex { get; set; }
-        /// <summary>
-        /// [1040.Pages] จำนวนหน้างานพิมพ์
-        /// </summary>
         public int? TotalPage { get; set; }
-        /// <summary>
-        /// [1040.OPages] จำนวนหน้างานต้นฉบับ
-        /// </summary>
         public int? OriginalPages { get; set; }
-        /// <summary>
-        /// [1040.FPages] จำนวนหน้าที่พิมพ์ด้านหน้า
-        /// </summary>
         public int? FrontPages { get; set; }
-        /// <summary>
-        /// [1040.BPages] จำนวนหน้าที่พิมพ์ด้านหลัง
-        /// </summary>
         public int? BackPages { get; set; }
-        /// <summary>
-        /// [1040.Sheets] จำนวนกระดาษที่พิมพ์
-        /// </summary>
         public int? TotalSheets { get; set; }
-        /// <summary>
-        /// [1040.IPages] จำนวนหน้าของใบปะหน้า
-        /// </summary>
         public int? InformationPages { get; set; }
-        /// <summary>
-        /// [1040.ISheets] จำนวนกระดาษของใบปะหน้า
-        /// </summary>
         public int? InformationSheets { get; set; }
-        /// <summary>
-        /// [1040.Offsets] จำนวนหน้าของการพิมพ์ Offsets
-        /// </summary>
         public int? TotalOffsets { get; set; }
-        /// <summary>
-        /// [1040.Feet] จำนวนความยาวของกระดาษ หน่วยเป็นฟุต
-        /// </summary>
         public int? Feet { get; set; }
-        /// <summary>
-        /// [1040.Nup] N-Up status: 0=unused, 1=N-Up, 2=X-2up
-        /// </summary>
         public int? Nup { get; set; }
-        /// <summary>
-        /// [1042.Swid] Width of page (1/6 inch)
-        /// </summary>
         public int? WidthPage { get; set; }
-        /// <summary>
-        /// [1042.Slen] Length of page (1/6 inch)
-        /// </summary>
         public int? LengthPage { get; set; }
-        /// <summary>
-        /// [1030.Date + 1030.Time] วันเวลาส่งข้อมูลเข้าระบบ
-        /// </summary>
         public DateTime? DateSubmission { get; set; }
-        /// <summary>
-        /// [1031.Startdate + 1031.Starttime] วันเวลาที่เริ่มเข้าคิว
-        /// </summary>
         public DateTime? DateStartQueue { get; set; }
-        /// <summary>
-        /// [1031.Enddate + 1031.Endtime] วันเวลาที่ออกจากคิว
-        /// </summary>
         public DateTime? DateEndQueue { get; set; }
-        /// <summary>
-        /// [1040.Startdate + 1040.Starttime] วันเวลาที่เริ่มพิมพ์
-        /// </summary>
         public DateTime? DateStart { get; set; }
-        /// <summary>
-        /// [1040.Enddate + 1040.Endtime] วันเวลาที่พิมพ์เสร็จ
-        /// </summary>
         public DateTime? DateEnd { get; set; }
-        /// <summary>
-        /// วันเวลาที่ทำการนำเข้า
-        /// </summary>
         public DateTime DateCreated { get; set; }
-        /// <summary>
-        /// เลขที่การนำเข้าข้อมูล
-        /// </summary>
         public int ImportId { get; set; }
-        /// <summary>
-        /// เลขที่การแก้ไขข้อมูล
-        /// </summary>
         public int? ImportIdModified { get; set; }
-        /// <summary>
-        /// วันเวลาที่แก้ไขข้อมูล
-        /// </summary>
         public DateTime? DateModified { get; set; }
-        /// <summary>
-        /// record type
-        /// 1000 : Input-Filter,
-        /// 1010 : Print Job Manager Job-Id,
-        /// 1011 : Print Job Manager Sud-Id,
-        /// 1012 : ODS,
-        /// 1020 : UI-Manager,
-        /// 1030 : Spool recheck information,
-        /// 1031 : Spool after printed,
-        /// 1032 : Spool after printed พร้อม 1031,
-        /// 1040 : Information actually printed,
-        /// 1041 : Information input and output bins,
-        /// 1042 : Detailed information input bins,
-        /// 1043 : Detailed information output bins,
-        /// 1052 : PJL/PCL Driver,
-        /// 1110 : Host Download,
-        /// 1120 : LP,
-        /// 1130 : HotDir,
-        /// 1200 : LCDS report information,
-        /// 1201 : Additional report information,
-        /// 1202 : Additional job information,
-        /// 1210 : LCDS-Driver,
-        /// 1600 : FTP-Driver - after job finished,
-        /// 1601 : 
-        /// 1602 : 
-        /// 1603 : 
-        /// 1620 : Postscript Driver - Job Id,
-        /// 1621 : Postscript Driver - Sub Id,
-        /// 2010 : job ticket information,
-        /// 99xx : User-specific Extensions
-        /// </summary>
         public int LastRecordType { get; set; }
     }
 }

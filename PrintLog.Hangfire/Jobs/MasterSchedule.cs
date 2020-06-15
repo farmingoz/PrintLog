@@ -21,14 +21,14 @@ namespace PrintLog.Hangfire.Jobs {
                     var prisma = scope.ServiceProvider.GetRequiredService<Prisma>();
                     var shiki = scope.ServiceProvider.GetRequiredService<Shiki>();
 
-                    var lstPrinter = dbContext.MasterTypes.Where(w => w.ParentTypeId == 1);
+                    var lstShiki = dbContext.MasterTypes.Where(w => w.ParentTypeId == 1000);
+                    foreach (var shikiPrinter in lstShiki) {
+                        RecurringJob.AddOrUpdate(shikiPrinter.TypeName, () => shiki.ReadLog(shikiPrinter.TypeId), "*/10 11 * * *", TimeZoneInfo.Local, "default");
+                    }
 
-                    foreach (var printer in lstPrinter) {
-                        if (printer.RefNo == 2000) {
-                            RecurringJob.AddOrUpdate(printer.TypeName, () => prisma.ReadLog(printer.TypeId), "*/10 11 * * *", TimeZoneInfo.Local, "default");
-                        } else if (printer.RefNo == 2001) {
-                            RecurringJob.AddOrUpdate(printer.TypeName, () => shiki.ReadLog(printer.TypeId), "*/10 11 * * *", TimeZoneInfo.Local, "default");
-                        }
+                    var lstPrisma = dbContext.MasterTypes.Where(w => w.ParentTypeId == 2000);
+                    foreach (var prismaPrinter in lstPrisma) {
+                        RecurringJob.AddOrUpdate(prismaPrinter.TypeName, () => prisma.ReadLog(prismaPrinter.TypeId), "*/10 11 * * *", TimeZoneInfo.Local, "default");
                     }
                 }
             } catch (Exception ex) {
